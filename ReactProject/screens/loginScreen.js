@@ -9,7 +9,11 @@ import {
 import React, { useState, useEffect } from "react";
 import { useNavigation } from "@react-navigation/core";
 
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
 
 const loginScreen = () => {
   const [email, setEmail] = useState("");
