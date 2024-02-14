@@ -10,9 +10,10 @@ import {
 import React from "react";
 import { getAuth } from "firebase/auth";
 import { useNavigation } from "@react-navigation/core";
+import { app } from "../firebaseConfig";
 
-const HomeScreen = () => {
-  const auth = getAuth();
+const homeScreen = () => {
+  const auth = getAuth(app);
   const navigation = useNavigation();
 
   const handleSignOut = () => {
@@ -77,7 +78,7 @@ const HomeScreen = () => {
   );
 };
 
-export default HomeScreen;
+export default homeScreen;
 
 const styles = StyleSheet.create({
   container: {

@@ -8,18 +8,18 @@ import {
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { useNavigation } from "@react-navigation/core";
-
 import {
   getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
 } from "firebase/auth";
+import { app } from "../firebaseConfig";
 
 const loginScreen = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigation = useNavigation();
-  const auth = getAuth();
+  const auth = getAuth(app);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
