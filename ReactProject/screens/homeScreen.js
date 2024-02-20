@@ -7,10 +7,17 @@ import {
   Image,
   ScrollView,
   TextInput,
+  ActivityIndicator,
 } from "react-native";
-import { collection, addDoc } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  query,
+  orderBy,
+  getDocs,
+} from "firebase/firestore";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigation } from "@react-navigation/core";
 import { auth, db } from "../firebaseConfig";
 
@@ -18,6 +25,33 @@ const homeScreen = () => {
   const navigation = useNavigation();
   const [newEssence, setNewEssence] = useState("");
   const [prompt, setPrompt] = useState("What's your favorite song this week?");
+  const [essencesData, setEssencesData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadEssences = async () => {
+      try {
+        const userId = auth.currentUser?.uid;
+        const querySnapshot = await getDocs(
+          query(
+            collection(db, `users/${userId}/essences`),
+            orderBy("createdAt", "desc")
+          )
+        );
+        const essences = [];
+        querySnapshot.forEach((doc) => {
+          essences.push({ id: doc.id, ...doc.data() });
+        });
+        setEssencesData(essences);
+      } catch (error) {
+        console.error("Error loading essences: ", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadEssences();
+  }, []);
 
   const handleSignOut = () => {
     auth
@@ -37,7 +71,7 @@ const homeScreen = () => {
     const essenceData = {
       prompt: prompt,
       response: newEssence,
-      createdAt: new Date(), 
+      createdAt: new Date(),
     };
 
     addDoc(collection(db, `users/${userId}/essences`), essenceData)
@@ -51,13 +85,6 @@ const homeScreen = () => {
         alert("An error occurred while adding essence. Please try again.");
       });
   };
-
-  const essencesData = [
-    { id: "1", title: "Favorite Cologne" },
-    { id: "2", title: "Go-To Playlist" },
-    { id: "3", title: "Comfort Food Recipe" },
-    { id: "3", title: "Comfort Food Recipe" },
-  ];
 
   const EssenceItem = ({ title }) => (
     <TouchableOpacity style={styles.essenceItem}>
@@ -96,13 +123,21 @@ const homeScreen = () => {
           <Text style={styles.buttonText}>Add</Text>
         </TouchableOpacity>
       </View>
-      <FlatList
-        data={essencesData}
-        renderItem={({ item }) => <EssenceItem title={item.title} />}
-        keyExtractor={(item) => item.id}
-        numColumns={2}
-        contentContainerStyle={styles.essencesGrid}
-      />
+      {loading ? (
+        <ActivityIndicator
+          style={{ marginTop: 20 }}
+          size="large"
+          color="#3B82F6"
+        />
+      ) : (
+        <FlatList
+          data={essencesData}
+          renderItem={({ item }) => <EssenceItem title={item.response} />}
+          keyExtractor={(item) => item.id}
+          numColumns={2}
+          contentContainerStyle={styles.essencesGrid}
+        />
+      )}
 
       <TouchableOpacity onPress={handleSignOut} style={styles.button}>
         <Text style={styles.buttonText}>Sign Out</Text>
