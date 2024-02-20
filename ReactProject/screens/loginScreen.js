@@ -13,14 +13,16 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
 } from "firebase/auth";
-import { app } from "../firebaseConfig";
+import { auth } from "../firebaseConfig";
+
+
 
 const loginScreen = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigation = useNavigation();
-  const auth = getAuth(app);
 
+  
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {

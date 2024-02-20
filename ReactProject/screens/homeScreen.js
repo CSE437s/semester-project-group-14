@@ -6,15 +6,18 @@ import {
   FlatList,
   Image,
   ScrollView,
+  TextInput,
 } from "react-native";
-import React from "react";
-import { getAuth } from "firebase/auth";
+import { collection, addDoc } from "firebase/firestore";
+
+import React, { useState } from "react";
 import { useNavigation } from "@react-navigation/core";
-import { app } from "../firebaseConfig";
+import { auth, db } from "../firebaseConfig";
 
 const homeScreen = () => {
-  const auth = getAuth(app);
   const navigation = useNavigation();
+  const [newEssence, setNewEssence] = useState("");
+  const [prompt, setPrompt] = useState("What's your favorite song this week?");
 
   const handleSignOut = () => {
     auth
@@ -23,6 +26,30 @@ const homeScreen = () => {
         navigation.replace("Login");
       })
       .catch((error) => alert(error.message));
+  };
+  const handleAddEssence = () => {
+    if (newEssence.trim() === "") {
+      return;
+    }
+
+    const userId = auth.currentUser?.uid;
+
+    const essenceData = {
+      prompt: prompt,
+      response: newEssence,
+      createdAt: new Date(), 
+    };
+
+    addDoc(collection(db, `users/${userId}/essences`), essenceData)
+      .then(() => {
+        setNewEssence("");
+
+        alert("Essence added successfully!");
+      })
+      .catch((error) => {
+        console.error("Error adding essence: ", error);
+        alert("An error occurred while adding essence. Please try again.");
+      });
   };
 
   const essencesData = [
@@ -40,14 +67,11 @@ const homeScreen = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* Profile section */}
       <View style={styles.profileSection}>
-        {/* Profile picture */}
         <Image
-          source={require("./../assets/profile-pic.jpg")} // Placeholder image, replace with actual profile picture
+          source={require("./../assets/profile-pic.jpg")}
           style={styles.profilePicture}
         />
-        {/* Bio and follower/following count */}
         <View style={styles.profileInfo}>
           <Text style={styles.title}>Welcome, {auth.currentUser?.email}</Text>
           <Text style={styles.subtitle}>
@@ -60,17 +84,26 @@ const homeScreen = () => {
           </View>
         </View>
       </View>
-
-      {/* Grid for "essences" */}
+      <View style={styles.promptContainer}>
+        <Text style={styles.promptText}>{prompt}</Text>
+        <TextInput
+          style={styles.responseInput}
+          value={newEssence}
+          onChangeText={setNewEssence}
+          placeholder="Your response"
+        />
+        <TouchableOpacity onPress={handleAddEssence} style={styles.button}>
+          <Text style={styles.buttonText}>Add</Text>
+        </TouchableOpacity>
+      </View>
       <FlatList
         data={essencesData}
         renderItem={({ item }) => <EssenceItem title={item.title} />}
         keyExtractor={(item) => item.id}
-        numColumns={2} // Display two columns in the grid
+        numColumns={2}
         contentContainerStyle={styles.essencesGrid}
       />
 
-      {/* Sign out button */}
       <TouchableOpacity onPress={handleSignOut} style={styles.button}>
         <Text style={styles.buttonText}>Sign Out</Text>
       </TouchableOpacity>
@@ -142,11 +175,28 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderRadius: 10,
     alignItems: "center",
-    marginTop: 20,
   },
   buttonText: {
     color: "white",
     fontWeight: "bold",
     fontSize: 16,
+  },
+  promptContainer: {
+    backgroundColor: "#E5E7EB",
+    padding: 10,
+    borderRadius: 10,
+    marginBottom: 20,
+  },
+  promptText: {
+    fontSize: 18,
+    marginBottom: 10,
+  },
+  responseInput: {
+    backgroundColor: "white",
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: "#CCCCCC",
+    padding: 10,
+    marginBottom: 10,
   },
 });
