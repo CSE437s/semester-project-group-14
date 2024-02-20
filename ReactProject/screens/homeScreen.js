@@ -123,21 +123,26 @@ const homeScreen = () => {
           <Text style={styles.buttonText}>Add</Text>
         </TouchableOpacity>
       </View>
-      {loading ? (
-        <ActivityIndicator
-          style={{ marginTop: 20 }}
-          size="large"
-          color="#3B82F6"
-        />
-      ) : (
-        <FlatList
-          data={essencesData}
-          renderItem={({ item }) => <EssenceItem title={item.response} />}
-          keyExtractor={(item) => item.id}
-          numColumns={2}
-          contentContainerStyle={styles.essencesGrid}
-        />
-      )}
+      <ScrollView
+        contentContainerStyle={styles.container}
+        nestedScrollEnabled={true}
+      >
+        {loading ? (
+          <ActivityIndicator
+            style={{ marginTop: 20 }}
+            size="large"
+            color="#3B82F6"
+          />
+        ) : (
+          <FlatList
+            data={essencesData}
+            renderItem={({ item }) => <EssenceItem title={item.response} />}
+            keyExtractor={(item) => item.id}
+            numColumns={2}
+            contentContainerStyle={styles.essencesGrid}
+          />
+        )}
+      </ScrollView>
 
       <TouchableOpacity onPress={handleSignOut} style={styles.button}>
         <Text style={styles.buttonText}>Sign Out</Text>
