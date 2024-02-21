@@ -86,14 +86,14 @@ const homeScreen = () => {
       });
   };
 
-  const EssenceItem = ({ title }) => (
+  const EssenceItem = ({ prompt, response }) => (
     <TouchableOpacity style={styles.essenceItem}>
-      <Text style={styles.essenceTitle}>{title}</Text>
+      <Text style={styles.essenceTitle}>{prompt}</Text>
+      <Text style={styles.essenceResponse}>{response}</Text>
     </TouchableOpacity>
   );
-
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <>
       <View style={styles.profileSection}>
         <Image
           source={require("./../assets/profile-pic.jpg")}
@@ -123,10 +123,6 @@ const homeScreen = () => {
           <Text style={styles.buttonText}>Add</Text>
         </TouchableOpacity>
       </View>
-      {/* <ScrollView
-        contentContainerStyle={styles.container}
-        nestedScrollEnabled={true}
-      > */}
       {loading ? (
         <ActivityIndicator
           style={{ marginTop: 20 }}
@@ -136,18 +132,19 @@ const homeScreen = () => {
       ) : (
         <FlatList
           data={essencesData}
-          renderItem={({ item }) => <EssenceItem title={item.response} />}
+          renderItem={({ item }) => (
+            <EssenceItem prompt={item.prompt} response={item.response} />
+          )}
           keyExtractor={(item) => item.id}
           numColumns={2}
           contentContainerStyle={styles.essencesGrid}
         />
       )}
-      {/* </ScrollView> */}
 
       <TouchableOpacity onPress={handleSignOut} style={styles.button}>
         <Text style={styles.buttonText}>Sign Out</Text>
       </TouchableOpacity>
-    </ScrollView>
+    </>
   );
 };
 
