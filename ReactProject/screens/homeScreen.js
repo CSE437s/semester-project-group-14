@@ -12,6 +12,7 @@ import {
 import {
   collection,
   addDoc,
+  onSnapshot,
   query,
   orderBy,
   getDocs,
@@ -29,28 +30,21 @@ const homeScreen = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadEssences = async () => {
-      try {
-        const userId = auth.currentUser?.uid;
-        const querySnapshot = await getDocs(
-          query(
-            collection(db, `users/${userId}/essences`),
-            orderBy("createdAt", "desc")
-          )
-        );
-        const essences = [];
-        querySnapshot.forEach((doc) => {
-          essences.push({ id: doc.id, ...doc.data() });
-        });
-        setEssencesData(essences);
-      } catch (error) {
-        console.error("Error loading essences: ", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    const userId = auth.currentUser?.uid;
+    const q = query(
+      collection(db, `users/${userId}/essences`),
+      orderBy("createdAt", "desc")
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const essences = [];
+      snapshot.forEach((doc) => {
+        essences.push({ id: doc.id, ...doc.data() });
+      });
+      setEssencesData(essences);
+      setLoading(false);
+    });
 
-    loadEssences();
+    return () => unsubscribe();
   }, []);
 
   const handleSignOut = () => {
