@@ -15,18 +15,15 @@ import {
 } from "firebase/auth";
 import { auth } from "../firebaseConfig";
 
-
-
-const loginScreen = () => {
+const LoginScreen = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigation = useNavigation();
 
-  
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
-        navigation.replace("Home");
+        navigation.navigate("Home");
       }
     });
 
@@ -68,7 +65,6 @@ const loginScreen = () => {
           secureTextEntry
         ></TextInput>
       </View>
-
       <View style={styles.buttonContainer}>
         <TouchableOpacity onPress={handleLogin} style={styles.button}>
           <Text style={styles.buttonText}>Login</Text>
@@ -84,7 +80,7 @@ const loginScreen = () => {
   );
 };
 
-export default loginScreen;
+export default LoginScreen;
 
 const styles = StyleSheet.create({
   container: {

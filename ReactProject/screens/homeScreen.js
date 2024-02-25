@@ -1,31 +1,26 @@
+import React, { useState, useEffect } from "react";
 import {
-  StyleSheet,
-  Text,
   View,
+  Text,
   TouchableOpacity,
+  StyleSheet,
   FlatList,
   Image,
-  ScrollView,
-  TextInput,
   ActivityIndicator,
 } from "react-native";
+import { useNavigation } from "@react-navigation/core";
+import { auth, db } from "../firebaseConfig";
 import {
   collection,
   addDoc,
   onSnapshot,
   query,
   orderBy,
-  getDocs,
 } from "firebase/firestore";
+import PromptScreen from "./PromptScreen";
 
-import React, { useState, useEffect } from "react";
-import { useNavigation } from "@react-navigation/core";
-import { auth, db } from "../firebaseConfig";
-
-const homeScreen = () => {
+const HomeScreen = () => {
   const navigation = useNavigation();
-  const [newEssence, setNewEssence] = useState("");
-  const [prompt, setPrompt] = useState("What's your favorite song this week?");
   const [essencesData, setEssencesData] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -51,33 +46,9 @@ const homeScreen = () => {
     auth
       .signOut()
       .then(() => {
-        navigation.replace("Login");
+        navigation.navigate("Login");
       })
       .catch((error) => alert(error.message));
-  };
-  const handleAddEssence = () => {
-    if (newEssence.trim() === "") {
-      return;
-    }
-
-    const userId = auth.currentUser?.uid;
-
-    const essenceData = {
-      prompt: prompt,
-      response: newEssence,
-      createdAt: new Date(),
-    };
-
-    addDoc(collection(db, `users/${userId}/essences`), essenceData)
-      .then(() => {
-        setNewEssence("");
-
-        alert("Essence added successfully!");
-      })
-      .catch((error) => {
-        console.error("Error adding essence: ", error);
-        alert("An error occurred while adding essence. Please try again.");
-      });
   };
 
   const EssenceItem = ({ prompt, response }) => (
@@ -86,8 +57,13 @@ const homeScreen = () => {
       <Text style={styles.essenceResponse}>{response}</Text>
     </TouchableOpacity>
   );
+
+  const navigateToPromptScreen = () => {
+    navigation.navigate("Prompt");
+  };
+
   return (
-    <>
+    <View style={styles.container}>
       <View style={styles.profileSection}>
         <Image
           source={require("./../assets/profile-pic.jpg")}
@@ -105,18 +81,9 @@ const homeScreen = () => {
           </View>
         </View>
       </View>
-      <View style={styles.promptContainer}>
-        <Text style={styles.promptText}>{prompt}</Text>
-        <TextInput
-          style={styles.responseInput}
-          value={newEssence}
-          onChangeText={setNewEssence}
-          placeholder="Your response"
-        />
-        <TouchableOpacity onPress={handleAddEssence} style={styles.button}>
-          <Text style={styles.buttonText}>Add</Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity onPress={navigateToPromptScreen} style={styles.button}>
+        <Text style={styles.buttonText}>Go to Prompt</Text>
+      </TouchableOpacity>
       {loading ? (
         <ActivityIndicator
           style={{ marginTop: 20 }}
@@ -134,19 +101,17 @@ const homeScreen = () => {
           contentContainerStyle={styles.essencesGrid}
         />
       )}
-
-      <TouchableOpacity onPress={handleSignOut} style={styles.button}>
-        <Text style={styles.buttonText}>Sign Out</Text>
-      </TouchableOpacity>
-    </>
+      <View style={styles.signOutContainer}>
+        <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
+          <Text style={styles.buttonText}>Sign Out</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 };
-
-export default homeScreen;
-
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
+    flex: 1,
     backgroundColor: "#F9FAFB",
     paddingHorizontal: 20,
     paddingTop: 20,
@@ -169,20 +134,26 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 5,
+    color: "#333",
   },
   subtitle: {
     fontSize: 16,
     color: "#6B7280",
-    marginBottom: 5,
+    marginBottom: 10,
   },
   bio: {
-    marginBottom: 5,
+    fontSize: 14,
+    color: "#4B5563",
+    marginBottom: 10,
   },
   followCounts: {
     flexDirection: "row",
+    marginBottom: 10,
   },
   followText: {
-    marginRight: 10,
+    marginRight: 20,
+    fontSize: 14,
+    color: "#6B7280",
   },
   essencesGrid: {
     paddingBottom: 20,
@@ -194,11 +165,18 @@ const styles = StyleSheet.create({
     backgroundColor: "#E5E7EB",
     borderRadius: 10,
     margin: 5,
-    paddingVertical: 15,
+    padding: 15,
     aspectRatio: 1,
   },
   essenceTitle: {
     fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 5,
+    color: "#333",
+  },
+  essenceResponse: {
+    fontSize: 14,
+    color: "#4B5563",
   },
   button: {
     backgroundColor: "#3B82F6",
@@ -206,28 +184,25 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderRadius: 10,
     alignItems: "center",
+    marginBottom: 10,
   },
   buttonText: {
     color: "white",
     fontWeight: "bold",
     fontSize: 16,
   },
-  promptContainer: {
-    backgroundColor: "#E5E7EB",
-    padding: 10,
+  signOutContainer: {
+    alignItems: "center",
+  },
+  signOutButton: {
+    backgroundColor: "#3B82F6",
+    width: "50%", // Adjust width as needed
+    paddingVertical: 15,
     borderRadius: 10,
+    alignItems: "center",
+    marginTop: 20, // Increased margin above the button
     marginBottom: 20,
   },
-  promptText: {
-    fontSize: 18,
-    marginBottom: 10,
-  },
-  responseInput: {
-    backgroundColor: "white",
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: "#CCCCCC",
-    padding: 10,
-    marginBottom: 10,
-  },
 });
+
+export default HomeScreen;
