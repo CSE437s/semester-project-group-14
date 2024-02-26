@@ -6,7 +6,14 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
-import { addDoc, collection, getDocs, query, doc } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  getDocs,
+  query,
+  doc,
+  where,
+} from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
 
 const PromptScreen = () => {
@@ -34,12 +41,21 @@ const PromptScreen = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleAddEssence = () => {
+  const handleAddEssence = async () => {
     if (newEssence.trim() === "") {
       return;
     }
 
     const userId = auth.currentUser?.uid;
+
+    const essencesRef = collection(db, `users/${userId}/essences`);
+    const querySnapshot = await getDocs(
+      query(essencesRef, where("prompt", "==", prompt))
+    );
+    if (!querySnapshot.empty) {
+      alert("You have already responded to this prompt.");
+      return;
+    }
 
     const essenceData = {
       prompt: prompt,
