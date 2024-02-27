@@ -108,24 +108,26 @@ const PromptScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.promptText}>{prompt}</Text>
-      {userResponse ? ( // Check if user has responded
-        <View style={styles.userResponseText}>
-          <Text >{userResponse}</Text>
-        </View>
-      ) : (
-        <View>
-          <TextInput
-            style={styles.responseInput}
-            value={newEssence}
-            onChangeText={setNewEssence}
-            placeholder="Your response"
-          />
-          <TouchableOpacity onPress={handleAddEssence} style={styles.button}>
-            <Text style={styles.buttonText}>Add</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      <View style={styles.promptContainer}>
+        <Text style={styles.promptText}>{prompt}</Text>
+        {userResponse ? ( // Check if user has responded
+          <View style={styles.userResponseText}>
+            <Text >{userResponse}</Text>
+          </View>
+        ) : (
+          <View style={styles.userResponseInputContainer}>
+            <TextInput
+              style={styles.responseInput}
+              value={newEssence}
+              onChangeText={setNewEssence}
+              placeholder="Your response"
+            />
+            <TouchableOpacity onPress={handleAddEssence} style={styles.button}>
+              <Text style={styles.buttonText}>Add</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
     </View>
   );
 };
@@ -133,11 +135,12 @@ const PromptScreen = () => {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: "#87CEEB",
-    padding: 10,
+    padding: 20,
     borderRadius: 10,
     flex: 1,
-    margin: 20,
-    marginBottom: 20,
+  },
+  promptContainer: {
+    // margin: 20,
   },
   promptText: {
     fontSize: 18,

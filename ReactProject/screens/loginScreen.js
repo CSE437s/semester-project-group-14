@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     marginTop: 15, 
   },
   forgotPasswordButtonText: {
-    color: "#000000", 
+    color: "#0782F9", 
     textDecorationLine: 'underline',
   },
 });
