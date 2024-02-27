@@ -12,6 +12,7 @@ import {
   getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  sendPasswordResetEmail,
 } from "firebase/auth";
 import { auth } from "../firebaseConfig";
 import { H1, H3 } from "tamagui";
@@ -49,6 +50,20 @@ const LoginScreen = () => {
       .catch((error) => alert(error.message));
   };
 
+  const handleForgotPassword = () => {
+    if (email) { //if email not empty
+      sendPasswordResetEmail(auth, email)
+        .then(() => {
+          alert('Password reset link sent! Check your email.');
+        })
+        .catch((error) => {
+          alert(error.message);
+        });
+    } else { //if empty put something in to reset
+      alert('Please enter your email address.');
+    }
+  };
+
   return (
     <KeyboardAvoidingView style={styles.container} behavior="padding">
       <View>
@@ -79,6 +94,9 @@ const LoginScreen = () => {
           style={[styles.button, styles.buttonOutline]}
         >
           <Text style={styles.buttonOutlineText}>Register</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handleForgotPassword} style={styles.forgotPasswordButton}>
+          <Text style={styles.forgotPasswordButtonText}>Forgot Password?</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -127,12 +145,19 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "white",
-    fontWeight: 700,
+    fontWeight: "700",
     fontSize: 16,
   },
   buttonOutlineText: {
     color: "#0782F9",
-    fontWeight: 700,
+    fontWeight: "700",
     fontSize: 16,
+  },
+  forgotPasswordButton: {
+    marginTop: 15, 
+  },
+  forgotPasswordButtonText: {
+    color: "#000000", 
+    textDecorationLine: 'underline',
   },
 });
