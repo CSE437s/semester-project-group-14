@@ -17,7 +17,6 @@ import {
   query,
   orderBy,
 } from "firebase/firestore";
-import PromptScreen from "./PromptScreen";
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -112,7 +111,7 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: "#87CEEB",
     paddingHorizontal: 20,
     paddingTop: 20,
   },
@@ -196,11 +195,11 @@ const styles = StyleSheet.create({
   },
   signOutButton: {
     backgroundColor: "#3B82F6",
-    width: "50%", // Adjust width as needed
+    width: "50%",
     paddingVertical: 15,
     borderRadius: 10,
     alignItems: "center",
-    marginTop: 20, // Increased margin above the button
+    marginTop: 20,
     marginBottom: 20,
   },
 });

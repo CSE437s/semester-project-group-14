@@ -14,6 +14,7 @@ import {
   signInWithEmailAndPassword,
 } from "firebase/auth";
 import { auth } from "../firebaseConfig";
+import { H1, H3 } from "tamagui";
 
 const LoginScreen = () => {
   const [email, setEmail] = useState("");
@@ -50,6 +51,10 @@ const LoginScreen = () => {
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior="padding">
+      <View>
+        <H1>Essence</H1>
+        <H3>What makes you, you? </H3>
+      </View>
       <View style={styles.inputContainer}>
         <TextInput
           placeholder="email"
@@ -87,6 +92,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     flex: 1,
+    backgroundColor: "#87CEEB",
   },
 
   inputContainer: {

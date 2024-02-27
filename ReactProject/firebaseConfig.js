@@ -29,7 +29,9 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 // const questions = [
-//   "What's your essential book recently?",
+//   "What's your essential song recently?",
+// "What's your essential book recently?",
+
 //   "What's an essential dish you've cooked recently?",
 //   "What's your essential hobby recently?",
 //   "What's an essential skill you've been honing recently?",

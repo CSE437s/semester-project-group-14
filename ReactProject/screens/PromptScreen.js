@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useContext } from "react";
 import {
   View,
   Text,
@@ -15,32 +15,11 @@ import {
   where,
 } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
+import { PromptContext } from "../App";
 
 const PromptScreen = () => {
   const [newEssence, setNewEssence] = useState("");
-  const [prompt, setPrompt] = useState("");
-
-  useEffect(() => {
-    const getRandomPrompt = async () => {
-      const promptsRef = collection(db, "prompts");
-      const promptSnapshot = await getDocs(promptsRef);
-      const promptList = [];
-      promptSnapshot.forEach((doc) => {
-        promptList.push(doc.data().question);
-      });
-      const randomIndex = Math.floor(Math.random() * promptList.length);
-      setPrompt(promptList[randomIndex]);
-    };
-
-    getRandomPrompt();
-
-    const interval = setInterval(() => {
-      getRandomPrompt();
-    }, 604800000);
-
-    return () => clearInterval(interval);
-  }, []);
-
+  const prompt = useContext(PromptContext);
   const handleAddEssence = async () => {
     if (newEssence.trim() === "") {
       return;
@@ -49,6 +28,7 @@ const PromptScreen = () => {
     const userId = auth.currentUser?.uid;
 
     const essencesRef = collection(db, `users/${userId}/essences`);
+
     const querySnapshot = await getDocs(
       query(essencesRef, where("prompt", "==", prompt))
     );
@@ -92,9 +72,10 @@ const PromptScreen = () => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#E5E7EB",
+    backgroundColor: "#87CEEB",
     padding: 10,
     borderRadius: 10,
+    flex: 1,
     marginBottom: 20,
   },
   promptText: {
