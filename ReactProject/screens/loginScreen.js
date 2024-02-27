@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     borderColor: "#0782F9",
     borderWidth: 2,
   },
-  buttionText: {
+  buttonText: {
     color: "white",
     fontWeight: 700,
     fontSize: 16,

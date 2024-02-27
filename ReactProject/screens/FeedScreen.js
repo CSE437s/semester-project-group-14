@@ -27,12 +27,12 @@ export default function FeedScreen() {
       >
         {questions.map((question, index) => (
           <Card key={index} elevate size="$4" bordered>
-            <Card.Header padded>
+            <Card.Header padded style={styles.header}>
               <H2>{question.prompt}</H2>
-              <Paragraph theme="alt2">User: {question.user}</Paragraph>
+              <Paragraph theme="alt2">{question.user}</Paragraph>
             </Card.Header>
-            <Card.Footer padded>
-              <Paragraph>User Response: {question.response}</Paragraph>
+            <Card.Footer padded style={styles.footer}>
+              <Paragraph>{question.response}</Paragraph>
             </Card.Footer>
             {/* You can add the user image in the Card.Background if needed */}
           </Card>
@@ -42,4 +42,8 @@ export default function FeedScreen() {
   );
 }
 
-const styles = StyleSheet.create({});
+const styles = StyleSheet.create({
+  header: {
+    fontSize: 18,
+  }
+});
