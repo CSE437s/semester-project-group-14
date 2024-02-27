@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   View,
   Text,
@@ -20,6 +20,48 @@ import { PromptContext } from "../App";
 const PromptScreen = () => {
   const [newEssence, setNewEssence] = useState("");
   const prompt = useContext(PromptContext);
+  const [userResponse, setUserResponse] = useState(null);
+
+  useEffect(() => {
+    const fetchPromptAndCheckResponse = async () => {
+      const getRandomPrompt = async () => {
+        const promptsRef = collection(db, "prompts");
+        const promptSnapshot = await getDocs(promptsRef);
+        const promptList = [];
+        promptSnapshot.forEach((doc) => {
+          promptList.push(doc.data().question);
+        });
+        const randomIndex = Math.floor(Math.random() * promptList.length);
+        setPrompt(promptList[randomIndex]);
+      };
+
+      const checkResponse = async () => {
+        const userId = auth.currentUser?.uid;
+        const essencesRef = collection(db, `users/${userId}/essences`);
+        const querySnapshot = await getDocs(
+          query(essencesRef, where("prompt", "==", prompt))
+        );
+        if (!querySnapshot.empty) {
+          setUserResponse(querySnapshot.docs[0].data().response);
+        } else {
+          setUserResponse(null); // Reset user response if they haven't responded
+        }
+      };
+
+      getRandomPrompt();
+      checkResponse();
+    };
+
+    // const interval = setInterval(fetchPromptAndCheckResponse, 24 * 60 * 60 * 1000); // Fetch prompt and check response every 24 hours
+    const interval = setInterval(fetchPromptAndCheckResponse, 60 * 1000); // Fetch prompt and check response every 24 hours
+
+    // Initial fetch
+    fetchPromptAndCheckResponse();
+
+    // Clean up interval
+    return () => clearInterval(interval);
+  }, []);
+
   const handleAddEssence = async () => {
     if (newEssence.trim() === "") {
       return;
@@ -46,7 +88,7 @@ const PromptScreen = () => {
     addDoc(collection(db, `users/${userId}/essences`), essenceData)
       .then(() => {
         setNewEssence("");
-        alert("Essence added successfully!");
+        setUserResponse(newEssence); // Update userResponse state with the new response
       })
       .catch((error) => {
         console.error("Error adding essence: ", error);
@@ -57,15 +99,23 @@ const PromptScreen = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.promptText}>{prompt}</Text>
-      <TextInput
-        style={styles.responseInput}
-        value={newEssence}
-        onChangeText={setNewEssence}
-        placeholder="Your response"
-      />
-      <TouchableOpacity onPress={handleAddEssence} style={styles.button}>
-        <Text style={styles.buttonText}>Add</Text>
-      </TouchableOpacity>
+      {userResponse ? ( // Check if user has responded
+        <View>
+          <Text style={styles.userResponseText}>{userResponse}</Text>
+        </View>
+      ) : (
+        <View>
+          <TextInput
+            style={styles.responseInput}
+            value={newEssence}
+            onChangeText={setNewEssence}
+            placeholder="Your response"
+          />
+          <TouchableOpacity onPress={handleAddEssence} style={styles.button}>
+            <Text style={styles.buttonText}>Add</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 };
@@ -76,6 +126,7 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 10,
     flex: 1,
+    margin: 20,
     marginBottom: 20,
   },
   promptText: {
@@ -101,6 +152,10 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "bold",
     fontSize: 16,
+  },
+  userResponseText: {
+    fontSize: 16,
+    marginBottom: 10,
   },
 });
 
