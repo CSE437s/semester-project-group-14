@@ -37,6 +37,17 @@ export default function FeedScreen() {
     return () => {};
   }, [prompt]);
 
+  const renderItem = ({ item }) => (
+    <View style={styles.card}>
+      <View style={styles.cardHeader}>
+        <Image source={require("../assets/profile-pic.jpg")} style={styles.avatar} />
+        <Text style={styles.username}>{item.username}</Text>
+      </View>
+      <Text style={styles.prompt}>{item.prompt}</Text>
+      <Text style={styles.response}>{item.response}</Text>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       {loading ? (
