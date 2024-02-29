@@ -48,6 +48,18 @@ export default function FeedScreen() {
     fetchData();
   }, [prompt]);
 
+  useEffect(() => { // Set navigation options in this useEffect
+    navigation.setOptions({
+      headerRight: () => (
+        <View style={styles.buttonWrapper}>
+          <Button onPress={() => navigation.navigate('Follow')}>
+            Search Users
+          </Button>
+        </View>
+      ),
+    });
+  }, [navigation]);
+
   const renderItem = ({ item }) => (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
