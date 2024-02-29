@@ -9,6 +9,8 @@ import FooterNavigator from "./Components/FooterNavigator";
 import HomeScreen from "./screens/homeScreen";
 import LoginScreen from "./screens/loginScreen";
 import FollowScreen from "./screens/FollowScreen";
+import FollowersScreen from "./screens/FollowersScreen";
+import FollowingScreen from "./screens/FollowingScreen";
 import { db, auth } from "./firebaseConfig";
 import { collection, getDocs } from "firebase/firestore";
 import PromptContext from "./contexts/PromptContext";
@@ -58,6 +60,8 @@ export default function App() {
                 {/* User is signed in, show the main app with FooterNavigator and other screens */}
                 <Stack.Screen name="Main" component={FooterNavigator} options={{ headerShown: false }} />
                 <Stack.Screen name="Follow" component={FollowScreen} />
+                <Stack.Screen name="Followers" component={FollowersScreen} />
+                <Stack.Screen name="Following" component={FollowingScreen} />
                 {/* would put screens that user is required to be logged in to see here */}
               </>
             ) : (

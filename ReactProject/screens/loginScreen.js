@@ -31,15 +31,15 @@ const LoginScreen = () => {
   const [username, setUsername] = useState("");
   const navigation = useNavigation();
 
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user) {
-        navigation.navigate("Home");
-      }
-    });
+  // useEffect(() => {
+  //   const unsubscribe = auth.onAuthStateChanged((user) => {
+  //     if (user) {
+  //       navigation.navigate("Home");
+  //     }
+  //   });
 
-    return unsubscribe;
-  }, []);
+  //   return unsubscribe;
+  // }, []);
 
     //check for username unique
     const checkUsernameUnique = async (username) => {

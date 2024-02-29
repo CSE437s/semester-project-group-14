@@ -31,3 +31,24 @@ export const fetchFollowingCount = async (userId) => { // get following for user
   const querySnapshot = await getDocs(query(followingRef));
   return querySnapshot.size;
 };
+
+
+export const fetchFollowing = async (userId) => {
+    const followingRef = collection(db, "users", userId, "following");
+    const querySnapshot = await getDocs(followingRef);
+    const following = [];
+    querySnapshot.forEach((doc) => {
+      following.push({ id: doc.id, ...doc.data() });
+    });
+    return following;
+};
+
+export const fetchFollowers = async (userId) => {
+    const followersRef = collection(db, "users", userId, "followers");
+    const querySnapshot = await getDocs(followersRef);
+    const followers = [];
+    querySnapshot.forEach((doc) => {
+      followers.push({ id: doc.id, ...doc.data() });
+    });
+    return followers;
+};

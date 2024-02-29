@@ -129,10 +129,16 @@ const HomeScreen = () => {
             Share and discover the small joys in life.
           </Text>
           <Text style={styles.bio}>Write your bio here...</Text>
+
           <View style={styles.followCounts}>
-            <Text style={styles.followText}>Followers: {followerCount}</Text>
-            <Text style={styles.followText}>Following: {followingCount}</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Followers')}>
+              <Text style={styles.followText}>Followers: {followerCount}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('Following')}>
+              <Text style={styles.followText}>Following: {followingCount}</Text>
+            </TouchableOpacity>
           </View>
+          
         </View>
       </View>
       <TouchableOpacity onPress={navigateToPromptScreen} style={styles.button}>
