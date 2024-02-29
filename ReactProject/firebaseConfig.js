@@ -1,12 +1,8 @@
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import {
-  getFirestore,
-  query,
-  getDocs,
-  collection,
-  addDoc,
-} from "firebase/firestore";
+import { getAuth, initializeAuth, getReactNativePersistence } from "firebase/auth";
+import {getFirestore} from "firebase/firestore";
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Optionally import other Firebase services that you want to use
 // import { ... } from "firebase/database";
@@ -26,8 +22,10 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
 const db = getFirestore(app);
+const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(AsyncStorage)
+});
 // const questions = [
 //   "What's your essential song recently?",
 // "What's your essential book recently?",
