@@ -1,15 +1,22 @@
 import React, { useState, useEffect, createContext } from "react";
 import { StyleSheet } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
 import "@tamagui/core/reset.css";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "./tamagui.config";
 import FooterNavigator from "./Components/FooterNavigator";
-import LoginScreen from "./screens/LoginScreen";
+import HomeScreen from "./screens/homeScreen";
+import LoginScreen from "./screens/loginScreen";
+import FollowScreen from "./screens/FollowScreen";
+import FollowersScreen from "./screens/FollowersScreen";
+import FollowingScreen from "./screens/FollowingScreen";
 import { db, auth } from "./firebaseConfig";
 import { collection, getDocs } from "firebase/firestore";
+import PromptContext from "./contexts/PromptContext";
 
-const PromptContext = createContext();
+// const PromptContext = createContext();
+const Stack = createStackNavigator();
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -47,13 +54,27 @@ export default function App() {
     <PromptContext.Provider value={prompt}>
       <TamaguiProvider config={tamaguiConfig}>
         <NavigationContainer>
-          {user ? <FooterNavigator /> : <LoginScreen />}
+          <Stack.Navigator>
+            {user ? (
+              <>
+                {/* User is signed in, show the main app with FooterNavigator and other screens */}
+                <Stack.Screen name="Main" component={FooterNavigator} options={{ headerShown: false }} />
+                <Stack.Screen name="Follow" component={FollowScreen} />
+                <Stack.Screen name="Followers" component={FollowersScreen} />
+                <Stack.Screen name="Following" component={FollowingScreen} />
+                {/* would put screens that user is required to be logged in to see here */}
+              </>
+            ) : (
+              // No user is signed in, show the Login screen
+              <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+            )}
+          </Stack.Navigator>
         </NavigationContainer>
       </TamaguiProvider>
     </PromptContext.Provider>
   );
 }
-export { PromptContext };
+// export { PromptContext };
 
 const styles = StyleSheet.create({
   container: {

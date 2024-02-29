@@ -15,7 +15,7 @@ import {
   where,
 } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
-import { PromptContext } from "../App";
+import PromptContext from "../contexts/PromptContext";
 
 const PromptScreen = () => {
   const [newEssence, setNewEssence] = useState("");
@@ -77,7 +77,13 @@ const PromptScreen = () => {
       return;
     }
 
-    const userId = auth.currentUser?.uid;
+    const userId = auth.currentUser?.uid; // Ensure this is defined
+
+    if (!userId) {
+      console.error("User is not authenticated");
+      alert("You must be logged in to add a response.");
+      return;
+    }
 
     const essencesRef = collection(db, `users/${userId}/essences`);
 
@@ -89,13 +95,15 @@ const PromptScreen = () => {
       return;
     }
 
+    // Include the userId in the essenceData
     const essenceData = {
       prompt: prompt,
       response: newEssence,
       createdAt: new Date(),
+      userId: userId, // Add this line to include the userId
     };
 
-    addDoc(collection(db, `users/${userId}/essences`), essenceData)
+    addDoc(essencesRef, essenceData)
       .then(() => {
         setNewEssence("");
         setUserResponse(newEssence); // Update userResponse state with the new response
@@ -105,6 +113,7 @@ const PromptScreen = () => {
         alert("An error occurred while adding essence. Please try again.");
       });
   };
+
 
   return (
     <View style={styles.container}>
