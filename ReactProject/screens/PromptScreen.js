@@ -15,7 +15,7 @@ import {
   where,
 } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
-import { PromptContext } from "../App";
+import PromptContext from "../contexts/PromptContext";
 
 const PromptScreen = () => {
   const [newEssence, setNewEssence] = useState("");

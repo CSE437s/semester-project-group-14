@@ -9,19 +9,27 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/core";
+import { useFocusEffect } from "@react-navigation/native";
 import { auth, db } from "../firebaseConfig";
 import {
   collection,
   addDoc,
+  getDoc,
+  doc,
   onSnapshot,
   query,
   orderBy,
 } from "firebase/firestore";
+import { fetchFollowerCount, fetchFollowingCount } from "../services/UserService";
 
 const HomeScreen = () => {
   const navigation = useNavigation();
   const [essencesData, setEssencesData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [username, setUsername] = useState('');
+
 
   useEffect(() => {
     const userId = auth.currentUser?.uid;
@@ -40,6 +48,53 @@ const HomeScreen = () => {
 
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    const userId = auth.currentUser?.uid;
+    if (!userId) return;
+  
+    const fetchCounts = async () => {
+      const followers = await fetchFollowerCount(userId);
+      const following = await fetchFollowingCount(userId);
+      setFollowerCount(followers);
+      setFollowingCount(following);
+    };
+  
+    fetchCounts();
+  }, [auth.currentUser]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchFollowingCountOnFocus = async () => {
+        const currentUserId = auth.currentUser?.uid;
+        if (currentUserId) {
+          const updatedFollowingCount = await fetchFollowingCount(currentUserId);
+          setFollowingCount(updatedFollowingCount);
+        }
+      };
+  
+      fetchFollowingCountOnFocus();
+    }, [])
+  );
+
+  useEffect(() => {
+    const fetchUsername = async () => {
+      const currentUserId = auth.currentUser?.uid;
+      if (currentUserId) {
+        try {
+          const userDoc = await getDoc(doc(db, "users", currentUserId));
+          if (userDoc.exists()) {
+            setUsername(userDoc.data().username);
+          }
+        } catch (error) {
+          console.error("Error getting username:", error);
+        }
+      }
+    };
+  
+    fetchUsername();
+  }, []);
+  
 
   const handleSignOut = () => {
     auth
@@ -69,14 +124,14 @@ const HomeScreen = () => {
           style={styles.profilePicture}
         />
         <View style={styles.profileInfo}>
-          <Text style={styles.title}>Welcome, {auth.currentUser?.email}</Text>
+          <Text style={styles.title}>Welcome, {username || auth.currentUser?.email}</Text>
           <Text style={styles.subtitle}>
             Share and discover the small joys in life.
           </Text>
           <Text style={styles.bio}>Write your bio here...</Text>
           <View style={styles.followCounts}>
-            <Text style={styles.followText}>Followers: 100</Text>
-            <Text style={styles.followText}>Following: 50</Text>
+            <Text style={styles.followText}>Followers: {followerCount}</Text>
+            <Text style={styles.followText}>Following: {followingCount}</Text>
           </View>
         </View>
       </View>

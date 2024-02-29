@@ -1,11 +1,13 @@
 import React, { useContext, useState, useEffect } from "react";
-import { Button, Card, H2, Image, Paragraph, XStack, YStack } from "tamagui";
-import { PromptContext } from "../App";
+import { Button, Card, H2, Image, Paragraph, YStack } from "tamagui";
+import PromptContext from "../contexts/PromptContext";
 import { getDocs, query, collectionGroup, where } from "firebase/firestore";
-import { StyleSheet, Text, View, ActivityIndicator } from "react-native";
-import { db, auth } from "../firebaseConfig";
+import { StyleSheet, View, ActivityIndicator } from "react-native";
+import { db } from "../firebaseConfig";
+import { useNavigation } from '@react-navigation/native';
 
 export default function FeedScreen() {
+  const navigation = useNavigation(); // Use navigation hook here
   const prompt = useContext(PromptContext);
   const [loading, setLoading] = useState(true);
   const [feedData, setFeedData] = useState([]);
@@ -14,28 +16,36 @@ export default function FeedScreen() {
     const fetchData = async () => {
       try {
         const essencesRef = collectionGroup(db, "essences");
-        const querySnapshot = await getDocs(
-          query(essencesRef, where("prompt", "==", prompt))
-        );
+        const q = query(essencesRef, where("prompt", "==", prompt));
+        const querySnapshot = await getDocs(q);
 
-        const essencesData = querySnapshot.docs.map((doc) => ({
+        const essencesData = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
         }));
 
-        console.log("Essences Data:", essencesData);
         setFeedData(essencesData);
         setLoading(false);
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching data: ", error);
         setLoading(false);
       }
     };
 
     fetchData();
-
-    return () => {};
   }, [prompt]);
+
+  useEffect(() => { // Set navigation options in this useEffect
+    navigation.setOptions({
+      headerRight: () => (
+        <View style={styles.buttonWrapper}>
+          <Button onPress={() => navigation.navigate('Follow')}>
+            Search Users
+          </Button>
+        </View>
+      ),
+    });
+  }, [navigation]);
 
   return (
     <View style={styles.container}>
@@ -70,4 +80,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#87CEEB",
   },
+  buttonWrapper: {
+    paddingRight:10,
+  }
 });

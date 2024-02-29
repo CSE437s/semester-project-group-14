@@ -14,12 +14,21 @@ import {
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
 } from "firebase/auth";
-import { auth } from "../firebaseConfig";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  setDoc,
+} from "firebase/firestore";
+import { auth, db } from "../firebaseConfig";
 import { H1, H3 } from "tamagui";
 
 const LoginScreen = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -32,13 +41,38 @@ const LoginScreen = () => {
     return unsubscribe;
   }, []);
 
-  const handleSignUp = () => {
+    //check for username unique
+    const checkUsernameUnique = async (username) => {
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("username", "==", username)); //check where equal
+      const querySnapshot = await getDocs(q);
+      return !querySnapshot.empty; //this would only be true if username was alr taken
+    }
+
+  const handleSignUp = async () => {
+    if (!username.trim()) {
+      alert('Please enter a username.');
+      return;
+    }
+  
+    const usernameTaken = await checkUsernameUnique(username);
+    if (usernameTaken) {
+      alert('Username already exists...');
+      return;
+    }
+
     createUserWithEmailAndPassword(auth, email, password)
-      .then((userCredentials) => {
-        const user = userCredentials.user;
-        console.log("Registered with:", user.email);
-      })
-      .catch((error) => alert(error.message));
+    .then(async (userCredentials) => {
+      const user = userCredentials.user;
+      console.log("Registered with:", user.email);
+
+      
+      await setDoc(doc(db, "users", user.uid), { //adding info to firestore
+        username: username, 
+        email: email, 
+      });
+    })
+    .catch((error) => alert(error.message));
   };
 
   const handleLogin = () => {
@@ -64,6 +98,9 @@ const LoginScreen = () => {
     }
   };
 
+
+
+
   return (
     <KeyboardAvoidingView style={styles.container} behavior="padding">
       <View>
@@ -71,6 +108,12 @@ const LoginScreen = () => {
         <H3>What makes you, you? </H3>
       </View>
       <View style={styles.inputContainer}>
+        <TextInput
+          placeholder="username"
+          value={username}
+          onChangeText={(text) => setUsername(text)}
+          style={styles.input}
+        ></TextInput>
         <TextInput
           placeholder="email"
           value={email}
