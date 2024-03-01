@@ -1,16 +1,22 @@
 import React, { useContext, useState, useEffect } from "react";
-import { StyleSheet, View, ActivityIndicator, Text, Image, FlatList } from "react-native";
+import { StyleSheet, View, ActivityIndicator, Text, Image, FlatList, Modal } from "react-native";
 import { Card, Button } from "tamagui";
 import PromptContext from "../contexts/PromptContext";
 import { getDocs, query, collectionGroup, where, doc, getDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { useNavigation } from '@react-navigation/native';
+import { SafeAreaView, SafeAreaProvider, useSafeAreaInsets, } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
+
 
 export default function FeedScreen() {
   const navigation = useNavigation();
   const prompt = useContext(PromptContext);
   const [loading, setLoading] = useState(true);
   const [feedData, setFeedData] = useState([]);
+  const { isPromptAnswered } = useContext(PromptContext);
+  const insets = useSafeAreaInsets();
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -72,25 +78,34 @@ export default function FeedScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      {loading ? (
-        <ActivityIndicator size="large" color="#3B82F6" />
-      ) : (
-        <FlatList
-          data={feedData}
-          renderItem={renderItem}
-          keyExtractor={item => item.id}
-        />
-      )}
-    </View>
-  );
+      <View style={styles.container}>
+        {/* <BlurView style={styles.overlay} intensity={10}>
+          <View style={styles.popup}>
+          <Text>Insert Prompt Here</Text>
+          <Button></Button>
+          </View>
+        </BlurView> */}
+        {loading ? (
+          <ActivityIndicator size="large" color="#3B82F6" />
+        ) : (
+          <FlatList
+            data={feedData}
+            renderItem={renderItem}
+            keyExtractor={item => item.id}
+          />
+        )}
+      </View>
+  );  
 }
 
 const styles = StyleSheet.create({
+  safeContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: "#F0F2F5",
     padding: 10,
+    backgroundColor: "#F0F2F5",
   },
   card: {
     backgroundColor: "white",
@@ -130,4 +145,29 @@ const styles = StyleSheet.create({
   buttonWrapper: {
     marginRight: 10,
   },
+  modalBox: {
+    backgroundColor: "green",
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1,
+    backgroundColor: "purple",
+    margin: 100,
+  },
+    overlay: {
+      position: "absolute",
+      borderRadius: 0,
+      top: 0,
+      bottom: 0,
+      left: 0,
+      right: 0,
+      zIndex: 2,    
+    },
+    popup: {
+      marginHorizontal: 100,
+      marginVertical: 200,
+      backgroundColor: "grey",
+    }
 });
