@@ -6,8 +6,8 @@ import "@tamagui/core/reset.css";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "./tamagui.config";
 import FooterNavigator from "./Components/FooterNavigator";
-import HomeScreen from "./screens/homeScreen";
-import LoginScreen from "./screens/loginScreen";
+import HomeScreen from "./screens/HomeScreen";
+import LoginScreen from "./screens/LoginScreen";
 import FollowScreen from "./screens/FollowScreen";
 import FollowersScreen from "./screens/FollowersScreen";
 import FollowingScreen from "./screens/FollowingScreen";
@@ -15,12 +15,14 @@ import { db, auth } from "./firebaseConfig";
 import { collection, getDocs } from "firebase/firestore";
 import PromptContext from "./contexts/PromptContext";
 
+
 // const PromptContext = createContext();
 const Stack = createStackNavigator();
 
 export default function App() {
   const [user, setUser] = useState(null);
   const [prompt, setPrompt] = useState("");
+  const [isPromptAnswered, setIsPromptAnswered] = useState(false);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -51,7 +53,7 @@ export default function App() {
   }, []);
 
   return (
-    <PromptContext.Provider value={prompt}>
+    <PromptContext.Provider value={ [prompt, setPrompt, isPromptAnswered, setIsPromptAnswered] }>
       <TamaguiProvider config={tamaguiConfig}>
         <NavigationContainer>
           <Stack.Navigator>
