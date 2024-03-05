@@ -26,9 +26,8 @@ import { auth, db } from "../firebaseConfig";
 import { H1, H3 } from "tamagui";
 
 const LoginScreen = () => {
-  const [email, setEmail] = useState("");
+  const [loginInput, setLoginInput] = useState(""); // Use for both email/username on login
   const [password, setPassword] = useState("");
-  const [username, setUsername] = useState("");
   const navigation = useNavigation();
 
   // useEffect(() => {
@@ -49,44 +48,48 @@ const LoginScreen = () => {
       return !querySnapshot.empty; //this would only be true if username was alr taken
     }
 
-  const handleSignUp = async () => {
-    if (!username.trim()) {
-      alert('Please enter a username.');
-      return;
-    }
+    const handleSignUp = async () => {
+      // Assuming loginInput is used as email for sign up
+      createUserWithEmailAndPassword(auth, loginInput, password)
+        .then(async (userCredentials) => {
+          const user = userCredentials.user;
+          console.log("Registered with:", user.email);
+          // Assuming username is provided during sign up, you might need additional logic here
+          await setDoc(doc(db, "users", user.uid), {
+            email: loginInput,
+            // username: username, // Include username if you have a field for it during sign up
+          });
+          navigation.navigate("Home"); // Navigate to Home after sign up
+        })
+        .catch((error) => alert(error.message));
+    };
+
+    const handleLogin = async () => {
+      let email = loginInput;
+      if (!loginInput.includes('@')) {
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("username", "==", loginInput));
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) {
+          alert('Username not found.');
+          return;
+        }
+        const userData = querySnapshot.docs[0].data();
+        email = userData.email;
+      }
   
-    const usernameTaken = await checkUsernameUnique(username);
-    if (usernameTaken) {
-      alert('Username already exists...');
-      return;
-    }
-
-    createUserWithEmailAndPassword(auth, email, password)
-    .then(async (userCredentials) => {
-      const user = userCredentials.user;
-      console.log("Registered with:", user.email);
-
-      
-      await setDoc(doc(db, "users", user.uid), { //adding info to firestore
-        username: username, 
-        email: email, 
-      });
-    })
-    .catch((error) => alert(error.message));
-  };
-
-  const handleLogin = () => {
-    signInWithEmailAndPassword(auth, email, password)
-      .then((userCredentials) => {
-        const user = userCredentials.user;
-        console.log("Logged in with:", user.email);
-      })
-      .catch((error) => alert(error.message));
-  };
+      signInWithEmailAndPassword(auth, email, password)
+        .then((userCredentials) => {
+          const user = userCredentials.user;
+          console.log("Logged in with:", user.email);
+          navigation.navigate("Home");
+        })
+        .catch((error) => alert(error.message));
+    };
 
   const handleForgotPassword = () => {
     if (email) { //if email not empty
-      sendPasswordResetEmail(auth, email)
+      sendPasswordResetEmail(auth, loginInput)
         .then(() => {
           alert('Password reset link sent! Check your email.');
         })
@@ -109,33 +112,24 @@ const LoginScreen = () => {
       </View>
       <View style={styles.inputContainer}>
         <TextInput
-          placeholder="username"
-          value={username}
-          onChangeText={(text) => setUsername(text)}
+          placeholder="Email or Username"
+          value={loginInput}
+          onChangeText={setLoginInput}
           style={styles.input}
-        ></TextInput>
+        />
         <TextInput
-          placeholder="email"
-          value={email}
-          onChangeText={(text) => setEmail(text)}
-          style={styles.input}
-        ></TextInput>
-        <TextInput
-          placeholder="password"
+          placeholder="Password"
           value={password}
-          onChangeText={(text) => setPassword(text)}
+          onChangeText={setPassword}
           style={styles.input}
           secureTextEntry
-        ></TextInput>
+        />
       </View>
       <View style={styles.buttonContainer}>
         <TouchableOpacity onPress={handleLogin} style={styles.button}>
           <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          onPress={handleSignUp}
-          style={[styles.button, styles.buttonOutline]}
-        >
+        <TouchableOpacity onPress={handleSignUp} style={[styles.button, styles.buttonOutline]}>
           <Text style={styles.buttonOutlineText}>Register</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={handleForgotPassword} style={styles.forgotPasswordButton}>
@@ -158,6 +152,7 @@ const styles = StyleSheet.create({
 
   inputContainer: {
     width: "80%",
+    marginTop: 10,
   },
   input: {
     backgroundColor: "white",
@@ -171,7 +166,7 @@ const styles = StyleSheet.create({
     width: "60%",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 40,
+    marginTop: 20,
   },
   button: {
     backgroundColor: "#0782F9",
@@ -202,5 +197,5 @@ const styles = StyleSheet.create({
   forgotPasswordButtonText: {
     color: "#0782F9", 
     textDecorationLine: 'underline',
-  },
+  }
 });

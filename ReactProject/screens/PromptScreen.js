@@ -7,6 +7,8 @@ const PromptScreen = () => {
   const [prompts, setPrompts] = useState([]);
   const [selectedPrompt, setSelectedPrompt] = useState("");
   const [totalVotes, setTotalVotes] = useState(0);
+  const [hasVoted, setHasVoted] = useState(false); // New state to track if the user has voted
+
 
   const fetchPromptsAndVotes = async () => {
     const promptsRef = collection(db, "potentialPrompts");
@@ -39,6 +41,7 @@ const PromptScreen = () => {
       }
 
       setSelectedPrompt(promptId); // Update selected prompt
+      setHasVoted(true); // Update the hasVoted state to true after voting
       fetchPromptsAndVotes(); // Refresh data after voting
     }
   };
@@ -65,13 +68,17 @@ const PromptScreen = () => {
           ]}
           onPress={() => handleSelectPrompt(prompt.id)}
         >
-          {/* Overlay to represent vote percentage */}
-          {/* <View style={[styles.percentageOverlay, { width: `${Math.round((prompt.Votes || 0) / totalVotes * 100)}%` === '100' ? '100%' : `${Math.round((prompt.Votes || 0) / totalVotes * 100)}%` }]} /> */}
+          {hasVoted && (
+            <View style={[styles.percentageOverlay, 
+              { width: Math.round((prompt.Votes || 0) / totalVotes * 100) >= 100 ? '100%' : `${Math.round((prompt.Votes || 0) / totalVotes * 100)}%` }]} />
+          )}
           <Text style={styles.promptText}>{prompt.Description}</Text>
-          <Text style={styles.votePercentage}>
-            {Math.round((prompt.Votes || 0) / totalVotes * 100)}%
-          </Text>
-        </TouchableOpacity>
+          {hasVoted && (
+            <Text style={styles.votePercentage}>
+              {Math.round((prompt.Votes || 0) / totalVotes * 100)}%
+            </Text>
+          )}
+      </TouchableOpacity>
       ))}
     </ScrollView>
   );
@@ -84,33 +91,33 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   headerContainer: {
-    backgroundColor: '#FFFFFF', // Light background color for the bubble
-    padding: 15, // Padding around the text and separator for spacing
-    borderRadius: 10, // Rounded corners for the bubble
-    shadowColor: "#000", // Shadow color for depth
+    backgroundColor: '#FFFFFF', 
+    padding: 15, 
+    borderRadius: 10, 
+    shadowColor: "#000", 
     shadowOffset: {
       width: 0,
-      height: 2, // Vertical offset for the shadow
+      height: 2,
     },
-    shadowOpacity: 0.25, // Shadow opacity for a subtle effect
-    shadowRadius: 3.84, // Blur radius of the shadow
-    elevation: 5, // Elevation for Android to create shadow effect
-    marginHorizontal: 10, // Horizontal margin to keep the bubble centered and within bounds
-    marginBottom: 20, // Bottom margin to space out from content below
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84, 
+    elevation: 5, 
+    marginHorizontal: 10, 
+    marginBottom: 20,
   },
   headerText: {
-    fontSize: 18, // Text size for readability
-    textAlign: 'center', // Center alignment for the text
-    paddingHorizontal: 10, // Horizontal padding to ensure text does not touch the bubble edges
-    paddingTop: 5, // Top padding for spacing above the text, adjust as needed
+    fontSize: 18, 
+    textAlign: 'center', 
+    paddingHorizontal: 10, 
+    paddingTop: 5, 
   },
   separatorLine: {
-    height: 2, // Height of the separator line to keep it thin
-    backgroundColor: '#DDD', // Grey color for the separator line
-    alignSelf: 'stretch', // Stretch to the width of the container
-    marginVertical: 10, // Vertical margin to create space above and below the line
-    width: '95%', // Make the line width 80% of its container width
-    alignSelf: 'center', // Center the line within its container
+    height: 2,
+    backgroundColor: '#DDD', 
+    alignSelf: 'stretch', 
+    marginVertical: 10,  
+    width: '95%', 
+    alignSelf: 'center',
   },
   promptContainer: {
     flexDirection: 'row',
