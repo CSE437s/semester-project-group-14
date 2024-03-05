@@ -118,32 +118,30 @@ const HomeScreen = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.profileSection}>
+      <View style={styles.header}>
         <Image
           source={require("./../assets/profile-pic.jpg")}
           style={styles.profilePicture}
         />
-        <View style={styles.profileInfo}>
-          <Text style={styles.title}>Welcome, {username || auth.currentUser?.email}</Text>
-          <Text style={styles.subtitle}>
-            Share and discover the small joys in life.
-          </Text>
-          <Text style={styles.bio}>Write your bio here...</Text>
-
-          <View style={styles.followCounts}>
-            <TouchableOpacity onPress={() => navigation.navigate('Followers')}>
-              <Text style={styles.followText}>Followers: {followerCount}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate('Following')}>
-              <Text style={styles.followText}>Following: {followingCount}</Text>
-            </TouchableOpacity>
-          </View>
-          
+        <View style={styles.userInfo}>
+          <Text style={styles.greeting}>Welcome, {username || auth.currentUser?.email}</Text>
+          <Text style={styles.userBio}>Share and discover the small joys in life.</Text>
         </View>
       </View>
-      <TouchableOpacity onPress={navigateToPromptScreen} style={styles.button}>
-        <Text style={styles.buttonText}>Go to Prompt</Text>
-      </TouchableOpacity>
+  
+      <View style={styles.statsContainer}>
+        <TouchableOpacity onPress={() => navigation.navigate('Followers')} style={styles.statsBox}>
+          <Text style={styles.statsCount}>{followerCount}</Text>
+          <Text style={styles.statsLabel}>Followers</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('Following')} style={styles.statsBox}>
+          <Text style={styles.statsCount}>{followingCount}</Text>
+          <Text style={styles.statsLabel}>Following</Text>
+        </TouchableOpacity>
+      </View>
+  
+      <View style={styles.separator}></View>
+  
       {loading ? (
         <ActivityIndicator
           style={{ marginTop: 20 }}
@@ -161,71 +159,78 @@ const HomeScreen = () => {
           contentContainerStyle={styles.essencesGrid}
         />
       )}
-      <View style={styles.signOutContainer}>
-        <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
-          <Text style={styles.buttonText}>Sign Out</Text>
-        </TouchableOpacity>
-      </View>
+  
+      <TouchableOpacity onPress={navigateToPromptScreen} style={styles.promptButton}>
+        <Text style={styles.promptButtonText}>What's on your mind?</Text>
+      </TouchableOpacity>
+  
+      <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
+        <Text style={styles.signOutButtonText}>Sign Out</Text>
+      </TouchableOpacity>
     </View>
   );
 };
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#87CEEB",
     padding: 20,
+    backgroundColor: '#87CEEB',
   },
-  profileSection: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 20,
   },
-  profilePicture: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginRight: 20,
+  separator: {
+    height: 2,
+    backgroundColor: '#c2ecfc', // Light gray color for the separator
+    marginVertical: 20,
   },
-  profileInfo: {
+  profilePicture: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 15,
+  },
+  userInfo: {
     flex: 1,
   },
-  title: {
-    fontSize: 24,
+  greeting: {
+    fontSize: 18,
     fontWeight: "bold",
-    marginBottom: 5,
     color: "#333",
   },
-  subtitle: {
-    fontSize: 16,
-    color: "#6B7280",
-    marginBottom: 10,
-  },
-  bio: {
+  userBio: {
     fontSize: 14,
-    color: "#4B5563",
-    marginBottom: 10,
+    color: "#666",
+    marginTop: 5,
   },
-  followCounts: {
-    flexDirection: "row",
-    marginBottom: 10,
-  },
-  followText: {
-    marginRight: 20,
-    fontSize: 14,
-    color: "#6B7280",
-  },
-  essencesGrid: {
-    paddingBottom: 20,
-  },
-  essenceItem: {
-    flex: 1,
+  promptButton: {
+    backgroundColor: "#00008B",
+    borderRadius: 20,
+    padding: 15,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#E5E7EB",
+    marginBottom: 10, // Adjust as necessary
+  },
+  promptButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  essenceItem: {
+    backgroundColor: "#fff",
     borderRadius: 10,
-    margin: 5,
     padding: 15,
-    aspectRatio: 1,
+    margin: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   essenceTitle: {
     fontSize: 16,
@@ -235,32 +240,43 @@ const styles = StyleSheet.create({
   },
   essenceResponse: {
     fontSize: 14,
-    color: "#4B5563",
-  },
-  button: {
-    backgroundColor: "#3B82F6",
-    width: "100%",
-    paddingVertical: 15,
-    borderRadius: 10,
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  buttonText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  signOutContainer: {
-    alignItems: "center",
+    color: "#666",
   },
   signOutButton: {
-    backgroundColor: "#3B82F6",
-    width: "50%",
-    paddingVertical: 15,
-    borderRadius: 10,
+    backgroundColor: "#FF7F7F",
+    borderRadius: 20,
+    padding: 15,
+    justifyContent: "center",
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 2.5,
+    marginBottom: 5, 
+    width: 100,
+    marginLeft: 125,
+  },
+  signOutButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
     marginBottom: 20,
+  },
+  statsBox: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  statsCount: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  statsLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 5,
   },
 });
 

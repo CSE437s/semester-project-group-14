@@ -178,11 +178,12 @@ export default function FeedScreen() {
 const styles = StyleSheet.create({
   safeContainer: {
     flex: 1,
+    backgroundColor: '#87CEEB',
   },
   container: {
     flex: 1,
     padding: 10,
-    backgroundColor: "#F0F2F5",
+    backgroundColor: "#87CEEB",
   },
   card: {
     backgroundColor: "white",
