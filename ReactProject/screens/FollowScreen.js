@@ -74,7 +74,7 @@ const FollowScreen = () => {
 
         const updatedFollowingCount = await fetchFollowingCount(currentUserId);
         setFollowingCount(updatedFollowingCount);
-        alert('You have successfully followed the user!');
+        // alert('You have successfully followed the user!');
       } catch (error) {
         console.error("Error following user:", error);
       }
@@ -93,7 +93,7 @@ const FollowScreen = () => {
         // Fetch and update the following count after unfollowing
         const updatedFollowingCount = await fetchFollowingCount(currentUserId);
         setFollowingCount(updatedFollowingCount);
-        alert('You have successfully unfollowed the user!');
+        // alert('You have successfully unfollowed the user!');
       } catch (error) {
         console.error("Error unfollowing user:", error);
       }
