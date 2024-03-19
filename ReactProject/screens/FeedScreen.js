@@ -19,6 +19,7 @@ export default function FeedScreen() {
   const [prompt, setPrompt, isPromptAnswered, setIsPromptAnswered] = useContext(PromptContext); // Destructuring context values
   const [newEssence, setNewEssence] = useState("");
   const insets = useSafeAreaInsets();
+  const [numLikesChanged, setNumLikesChanged] = useState(0); // State variable to trigger re-render on like/unlike
 
 
   useEffect(() => {
@@ -35,8 +36,12 @@ export default function FeedScreen() {
         const q = query(essencesRef, where("prompt", "==", prompt));
         const querySnapshot = await getDocs(q);
   
+  
         const essencesDataPromises = querySnapshot.docs.map(async (essenceDoc) => {
           const essenceData = essenceDoc.data();
+          const likesQuerySnapshot = await getDocs(collection(db, `users/${essenceData.userId}/essences/${essenceDoc.id}/likes`));
+          const numLikes = likesQuerySnapshot.size;
+  
           
           let username = "USER"; // Default username
           if (essenceData.userId) {
@@ -48,6 +53,7 @@ export default function FeedScreen() {
             id: essenceDoc.id,
             ...essenceData,
             username,
+            numLikes,
           };
         });
   
@@ -61,7 +67,7 @@ export default function FeedScreen() {
     };
   
     fetchData();
-  }, [prompt]);
+  }, [prompt, numLikesChanged]);
 
   useEffect(() => { // Set navigation options in this useEffect
     navigation.setOptions({
@@ -166,32 +172,8 @@ export default function FeedScreen() {
         console.error("Error liking essence: ", error);
         alert("An error occurred while liking essence. Please try again.");
       }
-    }
-  
-
-    // if (!querySnapshot.empty) {
-    //   for(doc : querySnapshotLikes) {
-
-    //   }
-      // deleteDoc(collection(db, `users/${postUserId}/essences/${essenceId}/likes`), likeData)
-      // .then(() => {
-      //   console.log("remove like");
-      // })
-      // .catch((error) => {
-      //   console.error("Error unliking essence: ", error);
-      //   alert("An error occurred while unliking essence. Please try again.");
-      // });
-    //   return;
-    // }
-
-    // addDoc(collection(db, `users/${postUserId}/essences/${essenceId}/likes`), likeData)
-    //   .then(() => {
-    //     console.log("added like");
-    //   })
-    //   .catch((error) => {
-    //     console.error("Error liking essence: ", error);
-    //     alert("An error occurred while liking essence. Please try again.");
-    //   });
+    }  
+    setNumLikesChanged(prev => prev + 1);
   };
 
   const renderItem = ({ item }) => (
@@ -203,7 +185,7 @@ export default function FeedScreen() {
       <Text style={styles.response}>{item.response}</Text>
       <TouchableOpacity onPress={() => handleLike(item.id, item.userId)} style={styles.likeButton}>
         <Ionicons name={'heart-outline'} size={"large"} color={"#3B82F6"} />
-        <Text style={styles.likeCount}>3</Text>
+        <Text style={styles.likeCount}>{item.numLikes}</Text>
       </TouchableOpacity>
     </View>
   );
