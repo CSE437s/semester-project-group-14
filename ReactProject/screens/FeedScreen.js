@@ -2,11 +2,13 @@ import React, { useContext, useState, useEffect } from "react";
 import { StyleSheet, View, ActivityIndicator, Text, Image, FlatList, Modal, TextInput, TouchableOpacity, } from "react-native";
 import { Card, Button } from "tamagui";
 import PromptContext from "../contexts/PromptContext";
-import { getDocs, addDoc, query, collectionGroup, where, doc, getDoc, collection } from "firebase/firestore";
+import { getDocs, deleteDoc, addDoc, query, collectionGroup, where, doc, getDoc, collection } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView, SafeAreaProvider, useSafeAreaInsets, } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+
 
 
 export default function FeedScreen() {
@@ -129,14 +131,80 @@ export default function FeedScreen() {
       
   };
 
+  const handleLike = async (essenceId, postUserId) => {
+    console.log(postUserId);
+    const userId = auth.currentUser?.uid;
+    const likesRef = collection(db, `users/${postUserId}/essences/${essenceId}/likes`);
+    const querySnapshot = await getDocs(
+      query(likesRef, where("userId", "==", userId))
+    );
+    const likeData = {
+      userId: userId,
+      likedAt: new Date(),
+    };
+
+    if (!querySnapshot.empty) {
+      querySnapshot.forEach(async (doc) => {
+        try {
+          await deleteDoc(doc.ref);
+          console.log("remove like");
+        } catch (error) {
+          console.error("Error unliking essence: ", error);
+          alert("An error occurred while unliking essence. Please try again.");
+        }
+      });
+    } else {
+      const likeData = {
+        userId: userId,
+        likedAt: new Date(),
+      };
+  
+      try {
+        await addDoc(collection(db, `users/${postUserId}/essences/${essenceId}/likes`), likeData);
+        console.log("added like");
+      } catch (error) {
+        console.error("Error liking essence: ", error);
+        alert("An error occurred while liking essence. Please try again.");
+      }
+    }
+  
+
+    // if (!querySnapshot.empty) {
+    //   for(doc : querySnapshotLikes) {
+
+    //   }
+      // deleteDoc(collection(db, `users/${postUserId}/essences/${essenceId}/likes`), likeData)
+      // .then(() => {
+      //   console.log("remove like");
+      // })
+      // .catch((error) => {
+      //   console.error("Error unliking essence: ", error);
+      //   alert("An error occurred while unliking essence. Please try again.");
+      // });
+    //   return;
+    // }
+
+    // addDoc(collection(db, `users/${postUserId}/essences/${essenceId}/likes`), likeData)
+    //   .then(() => {
+    //     console.log("added like");
+    //   })
+    //   .catch((error) => {
+    //     console.error("Error liking essence: ", error);
+    //     alert("An error occurred while liking essence. Please try again.");
+    //   });
+  };
+
   const renderItem = ({ item }) => (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
         <Image source={require("../assets/profile-pic.jpg")} style={styles.avatar} />
         <Text style={styles.username}>{item.username}</Text>
       </View>
-      {/* <Text style={styles.prompt}>{item.prompt}</Text> */}
       <Text style={styles.response}>{item.response}</Text>
+      <TouchableOpacity onPress={() => handleLike(item.id, item.userId)} style={styles.likeButton}>
+        <Ionicons name={'heart-outline'} size={"large"} color={"#3B82F6"} />
+        <Text style={styles.likeCount}>3</Text>
+      </TouchableOpacity>
     </View>
   );
 
@@ -293,10 +361,14 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: "#F0F0F0",
     borderRadius: 10,
-    // shadowColor: "#000",
-    // shadowOffset: { width: 0, height: 2 },
-    // shadowOpacity: 0.1,
-    // shadowRadius: 4,
-
+  },
+  likeButton: {
+    display: "flex",
+    flexDirection: "row",
+    paddingTop: 10,
+  },
+  likeCount: {
+    color: "#3B82F6",
+    marginLeft: 5,
   }
 });
