@@ -15,50 +15,61 @@ export default function FeedScreen() {
   const navigation = useNavigation();
   const [loading, setLoading] = useState(true);
   const [feedData, setFeedData] = useState([]);
+  const [followers, setFollowers] = useState([]);
   const [userResponse, setUserResponse] = useState(null);
   const [prompt, setPrompt, isPromptAnswered, setIsPromptAnswered] = useContext(PromptContext); // Destructuring context values
   const [newEssence, setNewEssence] = useState("");
   const insets = useSafeAreaInsets();
   const [numLikesChanged, setNumLikesChanged] = useState(0); // State variable to trigger re-render on like/unlike
 
-
   useEffect(() => {
+    const currentUserId = auth.currentUser?.uid;
+    if (!currentUserId) return;
     const fetchData = async () => {
       setLoading(true);
       try {
         if (!prompt) {
-          // If prompt is undefined, do not execute the query
           setLoading(false);
           return;
         }
+  
+        const followingRef = collection(db, "users", currentUserId, "following");
+        const followingSnapshot = await getDocs(followingRef);
+        const followingIds = followingSnapshot.docs.map(doc => doc.id);
+  
+        console.log(followingIds);
 
         const essencesRef = collectionGroup(db, "essences");
         const q = query(essencesRef, where("prompt", "==", prompt));
         const querySnapshot = await getDocs(q);
-  
-  
+        
         const essencesDataPromises = querySnapshot.docs.map(async (essenceDoc) => {
           const essenceData = essenceDoc.data();
           const likesQuerySnapshot = await getDocs(collection(db, `users/${essenceData.userId}/essences/${essenceDoc.id}/likes`));
           const numLikes = likesQuerySnapshot.size;
   
-          
           let username = "USER"; // Default username
           if (essenceData.userId) {
             const userDocRef = doc(db, "users", essenceData.userId);
             const userDoc = await getDoc(userDocRef);
             username = userDoc.exists() ? userDoc.data().username || "USER" : "Unknown User";
           }
-          return {
-            id: essenceDoc.id,
-            ...essenceData,
-            username,
-            numLikes,
-          };
+  
+          if (followingIds.includes(essenceData.userId)) {
+            return {
+              id: essenceDoc.id,
+              ...essenceData,
+              username,
+              numLikes,
+            };
+          } else {
+            return null; // If not, return null
+          }
         });
   
         const essencesWithData = await Promise.all(essencesDataPromises);
-        setFeedData(essencesWithData);
+        const filteredEssences = essencesWithData.filter(essence => essence !== null);
+        setFeedData(filteredEssences);
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -68,6 +79,7 @@ export default function FeedScreen() {
   
     fetchData();
   }, [prompt, numLikesChanged]);
+  
 
   useEffect(() => { // Set navigation options in this useEffect
     navigation.setOptions({
@@ -103,6 +115,8 @@ export default function FeedScreen() {
     fetchPromptAndCheckResponse();
   }, [prompt]);
 
+
+  
   const handleAddEssence = async () => {
     if (newEssence.trim() === "") {
       return;
@@ -210,6 +224,7 @@ export default function FeedScreen() {
         <Text styles={styles.popupPrompt}>{prompt}</Text>
 
         <TextInput
+        autoCapitalize="none"
           style={styles.responseInput}
           value={newEssence}
           onChangeText={setNewEssence}

@@ -102,6 +102,7 @@ const FollowScreen = () => {
   return (
     <View style={styles.container}>
       <TextInput
+      autoCapitalize="none"
         style={styles.input}
         placeholder="Search users..."
         value={searchTerm}

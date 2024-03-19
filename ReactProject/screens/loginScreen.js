@@ -112,6 +112,7 @@ const LoginScreen = () => {
       </View>
       <View style={styles.inputContainer}>
         <TextInput
+        autoCapitalize="none"
           placeholder="Email or Username"
           value={loginInput}
           onChangeText={setLoginInput}
