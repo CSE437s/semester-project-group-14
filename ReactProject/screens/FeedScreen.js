@@ -21,9 +21,6 @@ export default function FeedScreen() {
   const [newEssence, setNewEssence] = useState("");
   const insets = useSafeAreaInsets();
   useEffect(() => {
-    const currentUserId = auth.currentUser?.uid;
-    if (!currentUserId) return;
-  
     const fetchData = async () => {
       setLoading(true);
       try {
@@ -32,10 +29,11 @@ export default function FeedScreen() {
           return;
         }
   
+        const currentUserId = auth.currentUser?.uid;
+  
         const followingRef = collection(db, "users", currentUserId, "following");
         const unsubscribeFollowing = onSnapshot(followingRef, (snapshot) => {
           const followingIds = snapshot.docs.map(doc => doc.id);
-          console.log(followingIds);
   
           const essencesRef = collectionGroup(db, "essences");
           const q = query(essencesRef, where("prompt", "==", prompt));
@@ -48,12 +46,8 @@ export default function FeedScreen() {
               const querySnapshot = await getDocs(
                 query(likesRef, where("userId", "==", currentUserId))
               );
-            
-              if (!querySnapshot.empty) {
-              const liked = true;
-              } else {
-               const liked=false;
-              }            
+              
+              const liked = !querySnapshot.empty;
   
               let username = "USER"; // Default username
               if (essenceData.userId) {
@@ -68,10 +62,10 @@ export default function FeedScreen() {
                   ...essenceData,
                   username,
                   numLikes,
-                  liked,
+                  liked, 
                 };
               } else {
-                return null; // If not, return null
+                return null; 
               }
             });
   
@@ -97,18 +91,9 @@ export default function FeedScreen() {
   
     fetchData();
   }, [prompt]);
+  
 
-  useEffect(() => { // Set navigation options in this useEffect
-    navigation.setOptions({
-      headerRight: () => (
-        <View style={styles.buttonWrapper}>
-          <Button onPress={() => navigation.navigate('Follow')}>
-            Search Users
-          </Button>
-        </View>
-      ),
-    });
-  }, [navigation]);
+
 
   //FOR PROMPT HANDLING
   useEffect(() => {
