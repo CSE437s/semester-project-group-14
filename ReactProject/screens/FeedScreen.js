@@ -142,6 +142,7 @@ export default function FeedScreen() {
       prompt: prompt,
       response: newEssence,
       createdAt: new Date(),
+      userId: userId,
     };
 
     addDoc(collection(db, `users/${userId}/essences`), essenceData)
