@@ -44,6 +44,16 @@ export default function FeedScreen() {
               const essenceData = essenceDoc.data();
               const likesQuerySnapshot = await getDocs(collection(db, `users/${essenceData.userId}/essences/${essenceDoc.id}/likes`));
               const numLikes = likesQuerySnapshot.size;
+              const likesRef = collection(db, `users/${essenceData.userId}/essences/${essenceDoc.id}/likes`);
+              const querySnapshot = await getDocs(
+                query(likesRef, where("userId", "==", currentUserId))
+              );
+            
+              if (!querySnapshot.empty) {
+              const liked = true;
+              } else {
+               const liked=false;
+              }            
   
               let username = "USER"; // Default username
               if (essenceData.userId) {
@@ -58,6 +68,7 @@ export default function FeedScreen() {
                   ...essenceData,
                   username,
                   numLikes,
+                  liked,
                 };
               } else {
                 return null; // If not, return null
@@ -190,14 +201,12 @@ export default function FeedScreen() {
       }
     }
   
-    const updatedLikesSnapshot = await getDocs(likesRef);
-    const updatedNumLikes = updatedLikesSnapshot.size;
-  
     const updatedFeedData = feedData.map(essence => {
       if (essence.id === essenceId) {
         return {
           ...essence,
-          numLikes: updatedNumLikes,
+          liked: !essence.liked, 
+          numLikes: essence.liked ? essence.numLikes - 1 : essence.numLikes + 1, 
         };
       }
       return essence;
@@ -205,6 +214,7 @@ export default function FeedScreen() {
   
     setFeedData(updatedFeedData);
   };
+  
   
 
   const renderItem = ({ item }) => (
@@ -215,11 +225,12 @@ export default function FeedScreen() {
       </View>
       <Text style={styles.response}>{item.response}</Text>
       <TouchableOpacity onPress={() => handleLike(item.id, item.userId)} style={styles.likeButton}>
-        <Ionicons name={'heart-outline'} size={"large"} color={"#3B82F6"} />
+        <Ionicons name={item.liked ? 'heart' : 'heart-outline'} size={"large"} color={item.liked ? "#3B82F6" : "#3B82F6"} />
         <Text style={styles.likeCount}>{item.numLikes}</Text>
       </TouchableOpacity>
     </View>
   );
+  
 
   return (
     <View style={styles.container}>
