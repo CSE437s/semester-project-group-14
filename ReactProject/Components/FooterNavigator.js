@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import HomeScreen from "../screens/HomeScreen";
 import PromptScreen from "../screens/PromptScreen";
 import FeedScreen from "../screens/FeedScreen"; 
+import FollowScreen from "../screens/FollowScreen";
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const Tab = createBottomTabNavigator();
@@ -18,7 +19,10 @@ export default function FooterNavigator() {
           
           if (route.name === 'Feed') {
             iconName = focused ? "home": "home-outline";
-          } else if (route.name === 'Prompt') {
+          } else if (route.name === 'Follow') {
+            iconName = focused ? 'search' : 'search-outline';
+          }
+            else if (route.name === 'Prompt') {
             iconName = focused ? 'help' : 'help-outline';
           } else if (route.name === 'Home') {
             iconName = focused ? 'person-circle' : 'person-circle-outline'; // Adjusted icon names
@@ -29,9 +33,11 @@ export default function FooterNavigator() {
         },
         tabBarActiveTintColor: 'tomato',
         tabBarInactiveTintColor: 'gray',
+
       })}
       >
       <Tab.Screen name="Feed" component={FeedScreen} />
+      <Tab.Screen name="Follow" component={FollowScreen} />
       <Tab.Screen name="Prompt" component={PromptScreen} />
       <Tab.Screen name="Home" component={HomeScreen} />
     </Tab.Navigator>
