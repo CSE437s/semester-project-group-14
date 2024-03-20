@@ -20,7 +20,6 @@ export default function FeedScreen() {
   const [prompt, setPrompt, isPromptAnswered, setIsPromptAnswered] = useContext(PromptContext); // Destructuring context values
   const [newEssence, setNewEssence] = useState("");
   const insets = useSafeAreaInsets();
-  const [numLikesChanged, setNumLikesChanged] = useState(0); // State variable to trigger re-render on like/unlike
 
   useEffect(() => {
     const currentUserId = auth.currentUser?.uid;
@@ -78,7 +77,7 @@ export default function FeedScreen() {
     };
   
     fetchData();
-  }, [prompt, numLikesChanged]);
+  }, [prompt]);
   
 
   useEffect(() => { // Set navigation options in this useEffect
@@ -162,7 +161,7 @@ export default function FeedScreen() {
       userId: userId,
       likedAt: new Date(),
     };
-
+  
     if (!querySnapshot.empty) {
       querySnapshot.forEach(async (doc) => {
         try {
@@ -186,8 +185,19 @@ export default function FeedScreen() {
         console.error("Error liking essence: ", error);
         alert("An error occurred while liking essence. Please try again.");
       }
-    }  
-    setNumLikesChanged(prev => prev + 1);
+    }
+  
+    // Update the feedData directly with the updated numLikes
+    const updatedFeedData = feedData.map(essence => {
+      if (essence.id === essenceId) {
+        return {
+          ...essence,
+          numLikes: querySnapshot.empty ? essence.numLikes - 1 : essence.numLikes + 1,
+        };
+      }
+      return essence;
+    });
+    setFeedData(updatedFeedData);
   };
 
   const renderItem = ({ item }) => (
