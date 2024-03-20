@@ -72,6 +72,7 @@ const LoginScreen = () => {
     };
 
   const handleForgotPassword = () => {
+    let email = loginInput;
     if (email) { //if email not empty
       sendPasswordResetEmail(auth, loginInput)
         .then(() => {

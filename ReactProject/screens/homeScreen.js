@@ -159,11 +159,6 @@ const HomeScreen = () => {
           contentContainerStyle={styles.essencesGrid}
         />
       )}
-  
-      <TouchableOpacity onPress={navigateToPromptScreen} style={styles.promptButton}>
-        <Text style={styles.promptButtonText}>What's on your mind?</Text>
-      </TouchableOpacity>
-  
       <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
         <Text style={styles.signOutButtonText}>Sign Out</Text>
       </TouchableOpacity>
