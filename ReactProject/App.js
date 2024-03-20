@@ -8,6 +8,7 @@ import tamaguiConfig from "./tamagui.config";
 import FooterNavigator from "./Components/FooterNavigator";
 // import HomeScreen from "./screens/HomeScreen";
 import LoginScreen from "./screens/LoginScreen";
+import RegisterScreen from "./screens/RegisterScreen";
 import FollowScreen from "./screens/FollowScreen";
 import FollowersScreen from "./screens/FollowersScreen";
 import FollowingScreen from "./screens/FollowingScreen";
@@ -68,7 +69,11 @@ export default function App() {
               </>
             ) : (
               // No user is signed in, show the Login screen
+              <>
               <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+              <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
+              </>
+
             )}
           </Stack.Navigator>
         </NavigationContainer>

@@ -72,4 +72,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default {FollowersScreen, fetchFollowers};
+export default FollowersScreen;

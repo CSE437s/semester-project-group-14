@@ -48,22 +48,6 @@ const LoginScreen = () => {
       return !querySnapshot.empty; //this would only be true if username was alr taken
     }
 
-    const handleSignUp = async () => {
-      // Assuming loginInput is used as email for sign up
-      createUserWithEmailAndPassword(auth, loginInput, password)
-        .then(async (userCredentials) => {
-          const user = userCredentials.user;
-          console.log("Registered with:", user.email);
-          // Assuming username is provided during sign up, you might need additional logic here
-          await setDoc(doc(db, "users", user.uid), {
-            email: loginInput,
-            // username: username, // Include username if you have a field for it during sign up
-          });
-          navigation.navigate("Home"); // Navigate to Home after sign up
-        })
-        .catch((error) => alert(error.message));
-    };
-
     const handleLogin = async () => {
       let email = loginInput;
       if (!loginInput.includes('@')) {
@@ -130,8 +114,8 @@ const LoginScreen = () => {
         <TouchableOpacity onPress={handleLogin} style={styles.button}>
           <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleSignUp} style={[styles.button, styles.buttonOutline]}>
-          <Text style={styles.buttonOutlineText}>Register</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('Register')} style={[styles.button, styles.buttonOutline]}>
+          <Text style={styles.buttonOutlineText}>Go to Register</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={handleForgotPassword} style={styles.forgotPasswordButton}>
           <Text style={styles.forgotPasswordButtonText}>Forgot Password?</Text>
