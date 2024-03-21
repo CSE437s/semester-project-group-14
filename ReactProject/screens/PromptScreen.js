@@ -11,6 +11,7 @@ const PromptScreen = ({ navigation }) => {
   const [hasVoted, setHasVoted] = useState(false);
   const [prompt, setPrompt, isPromptAnswered, setIsPromptAnswered] = useContext(PromptContext);
   const [newPotentialPrompt, setNewPotentialPrompt] = useState("");
+  const [sortBy, setSortBy] = useState(""); // State to track sorting method
 
   useEffect(() => {
     fetchPromptsAndVotes();
@@ -30,7 +31,8 @@ const PromptScreen = ({ navigation }) => {
     setPrompts(fetchedPrompts);
     setTotalVotes({ upvotes: totalUpvotes, downvotes: totalDownvotes });
   };
-  
+
+
   const handleVote = async (promptId, voteType) => {
     const userId = auth.currentUser?.uid;
     const promptRef = doc(db, "potentialPrompts", promptId);
@@ -76,23 +78,23 @@ const PromptScreen = ({ navigation }) => {
   };
   
   
-
+  
   const handleSelectPrompt = async (promptId) => {
     if (promptId !== selectedPrompt) {
       const newPromptRef = doc(db, "potentialPrompts", promptId);
       await updateDoc(newPromptRef, { Votes: increment(1) });
-
+  
       if (selectedPrompt) {
         const oldPromptRef = doc(db, "potentialPrompts", selectedPrompt);
         await updateDoc(oldPromptRef, { Votes: increment(-1) });
       }
-
+  
       setSelectedPrompt(promptId);
       setHasVoted(true);
       fetchPromptsAndVotes();
     }
   };
-
+  
   const handleAddPotentialPrompt = async () => {
     if (newPotentialPrompt.trim() === "") {
       return;
@@ -120,6 +122,15 @@ const PromptScreen = ({ navigation }) => {
       });
   };
   
+  const sortPrompts = (sortBy) => {
+    let sortedPrompts = [...prompts];
+    if (sortBy === "upvotes") {
+      sortedPrompts.sort((a, b) => b.upvotes.length - a.upvotes.length);
+    } else if (sortBy === "recent") {
+      sortedPrompts.sort((a, b) => b.createdAt - a.createdAt);
+    }
+    setPrompts(sortedPrompts);
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -137,8 +148,8 @@ const PromptScreen = ({ navigation }) => {
         <View style={styles.addSubmissionContainer}>
           <Text style={styles.addSubmissionText}>Add a submission for next week's prompt!</Text> 
           <TextInput
-                    value={newPotentialPrompt}
-                    onChangeText={setNewPotentialPrompt}
+            value={newPotentialPrompt}
+            onChangeText={setNewPotentialPrompt}
             style={styles.input}
             autoCapitalize="none"
             placeholder="Your question"
@@ -149,30 +160,50 @@ const PromptScreen = ({ navigation }) => {
         </View>
       )}
 
-{prompts.map((prompt) => (
-  <View key={prompt.id} style={styles.promptContainer}>
-    <Text style={styles.promptText}>{prompt.Description}</Text>
-    <View style={styles.voteContainer}>
-      <View style={styles.voteSection}>
-        <TouchableOpacity onPress={() => handleVote(prompt.id, "upvote")} >
-          <Ionicons name="caret-up" size={18} color="#3B82F6" />
+      <View style={styles.sortButtonsContainer}>
+        <TouchableOpacity
+          style={[styles.sortButton, {backgroundColor: '#FFF'}]}
+          onPress={() => {
+            sortPrompts("upvotes");
+            setSortBy("upvotes");
+          }}
+        >
+          <Text style={[styles.sortButtonText, {color: '#3B82F6'}]}>Sort by Upvotes</Text>
         </TouchableOpacity>
-        <Text style={styles.voteCount}>{prompt.upvotes.length}</Text>
-      </View>
-      <View style={styles.voteSection}>
-        <TouchableOpacity onPress={() => handleVote(prompt.id, "downvote")}>
-          <Ionicons name="caret-down" size={18} color="#FF6347" />
+        <TouchableOpacity
+          style={[styles.sortButton, {backgroundColor: '#FFF'}]}
+          onPress={() => {
+            sortPrompts("recent");
+            setSortBy("recent");
+          }}
+        >
+          <Text style={[styles.sortButtonText, {color: '#3B82F6'}]}>Sort by Recent</Text>
         </TouchableOpacity>
-        <Text style={styles.voteCount}>{prompt.downvotes.length}</Text>
       </View>
-    </View>
-  </View>
-))}
 
-
+      {prompts.map((prompt) => (
+        <View key={prompt.id} style={styles.promptContainer}>
+          <Text style={styles.promptText}>{prompt.Description}</Text>
+          <View style={styles.voteContainer}>
+            <View style={styles.voteSection}>
+              <TouchableOpacity onPress={() => handleVote(prompt.id, "upvote")} >
+                <Ionicons name="caret-up" size={18} color="#3B82F6" />
+              </TouchableOpacity>
+              <Text style={styles.voteCount}>{prompt.upvotes.length}</Text>
+            </View>
+            <View style={styles.voteSection}>
+              <TouchableOpacity onPress={() => handleVote(prompt.id, "downvote")}>
+                <Ionicons name="caret-down" size={18} color="#FF6347" />
+              </TouchableOpacity>
+              <Text style={styles.voteCount}>{prompt.downvotes.length}</Text>
+            </View>
+          </View>
+        </View>
+      ))}
     </ScrollView>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     backgroundColor: "#87CEEB",
@@ -217,8 +248,20 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontWeight: "bold",
   },
+  sortButtonsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginTop: 10,
+
+  },
+  sortButton: {
+    borderRadius: 5,
+    padding: 10,
+    alignItems: "center",
+  },
+  sortButtonText: {
+    fontWeight: "bold",
+  },
 });
-
-
 
 export default PromptScreen;
