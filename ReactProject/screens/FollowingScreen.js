@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { View, Text, FlatList, StyleSheet, Image } from 'react-native';
 import { db, auth } from "../firebaseConfig";
 import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 
@@ -12,15 +12,21 @@ const FollowingScreen = () => {
       const currentUserId = auth.currentUser?.uid;
       if (!currentUserId) return;
 
+      setLoading(true);
       try {
         const followingRef = collection(db, "users", currentUserId, "following");
         const snapshot = await getDocs(followingRef);
         const followingListPromises = snapshot.docs.map(async (docRef) => {
           const userDocRef = doc(db, "users", docRef.id);
           const userSnapshot = await getDoc(userDocRef);
-          return { id: userSnapshot.id, ...userSnapshot.data() };
+          if (userSnapshot.exists()) {
+            return { id: userSnapshot.id, ...userSnapshot.data() };
+          } else {
+            console.error("No such document for following with ID:", docRef.id);
+            return null;
+          }
         });
-        const followingList = await Promise.all(followingListPromises);
+        const followingList = (await Promise.all(followingListPromises)).filter(following => following !== null);
         setFollowing(followingList);
       } catch (error) {
         console.error("Error fetching following:", error);
@@ -35,14 +41,18 @@ const FollowingScreen = () => {
   return (
     <View style={styles.container}>
       {loading ? (
-        <Text>Loading...</Text>
+        <Text style={styles.loadingText}>Loading...</Text>
       ) : (
         <FlatList
             data={following}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
                 <View style={styles.userItem}>
-                <Text>{item.username}</Text>
+                  <Image
+                    source={require("../assets/profile-pic.jpg")} // Use a dynamic source if available
+                    style={styles.avatar}
+                  />
+                  <Text style={styles.username}>{item.username}</Text>
                 </View>
             )}
         />
@@ -54,12 +64,28 @@ const FollowingScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    backgroundColor: '#FFF', 
+  },
+  loadingText: {
+    textAlign: 'center',
+    marginTop: 20,
+    fontSize: 16,
   },
   userItem: {
-    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
     borderBottomWidth: 1,
-    borderBottomColor: 'gray',
+    borderBottomColor: '#E0E0E0', 
+  },
+  avatar: {
+    width: 40, 
+    height: 40, 
+    borderRadius: 20, 
+    marginRight: 10,
+  },
+  username: {
+    fontSize: 16,
   },
 });
 
