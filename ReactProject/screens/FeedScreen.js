@@ -210,7 +210,7 @@ export default function FeedScreen() {
       </View>
       <Text style={styles.response}>{item.response}</Text>
       <TouchableOpacity onPress={() => handleLike(item.id, item.userId)} style={styles.likeButton}>
-        <Ionicons name={item.liked ? 'heart' : 'heart-outline'} size={"large"} color={item.liked ? "#3B82F6" : "#3B82F6"} />
+        <Ionicons name={item.liked ? 'heart' : 'heart-outline'} size={20} color={item.liked ? "#3B82F6" : "#3B82F6"} />
         <Text style={styles.likeCount}>{item.numLikes}</Text>
       </TouchableOpacity>
     </View>
