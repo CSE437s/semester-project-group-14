@@ -28,54 +28,67 @@ const PromptScreen = ({ navigation }) => {
       totalDownvotes += promptData.downvotes.length;
       return promptData;
     });
+
     setPrompts(fetchedPrompts);
     setTotalVotes({ upvotes: totalUpvotes, downvotes: totalDownvotes });
   };
-
+  
 
   const handleVote = async (promptId, voteType) => {
     const userId = auth.currentUser?.uid;
-    const promptRef = doc(db, "potentialPrompts", promptId);
+    const promptIndex = prompts.findIndex((prompt) => prompt.id === promptId);
+  
+    if (promptIndex === -1) {
+      return;
+    }
+  
+    const updatedPrompts = [...prompts];
+    const updatedPrompt = { ...updatedPrompts[promptIndex] };
+  
     let voteField;
+    let oppositeField;
   
     if (voteType === "upvote") {
       voteField = "upvotes";
+      oppositeField = "downvotes";
     } else {
       voteField = "downvotes";
+      oppositeField = "upvotes";
     }
   
     // Fetch existing prompt data
-    const promptData = prompts.find(prompt => prompt.id === promptId);
-    const upvotes = promptData.upvotes || [];
-    const downvotes = promptData.downvotes || [];
+    const upvotes = updatedPrompt.upvotes || [];
+    const downvotes = updatedPrompt.downvotes || [];
   
     // Check if the user has already voted
-    const hasVotedUp = upvotes.includes(userId);
-    const hasVotedDown = downvotes.includes(userId);
+    const hasVoted = upvotes.includes(userId) || downvotes.includes(userId);
   
-    // If the user has already voted in the same direction, remove their vote
-    if ((voteType === "upvote" && hasVotedUp) || (voteType === "downvote" && hasVotedDown)) {
-      await updateDoc(promptRef, {
-        [voteField]: promptData[voteField].filter(id => id !== userId)
-      });
+    // If the user has already voted, switch their vote
+    if (hasVoted) {
+      updatedPrompt[voteField] = updatedPrompt[voteField].includes(userId)
+        ? updatedPrompt[voteField].filter((id) => id !== userId)
+        : [...updatedPrompt[voteField], userId];
+  
+      if (updatedPrompt[oppositeField].includes(userId)) {
+        updatedPrompt[oppositeField] = updatedPrompt[oppositeField].filter((id) => id !== userId);
+      }
     } else {
       // Add the user's vote
-      await updateDoc(promptRef, {
-        [voteField]: [...promptData[voteField], userId]
-      });
-  
-      // If the user has voted in the opposite direction, remove their vote from the opposite field
-      const oppositeField = voteType === "upvote" ? "downvotes" : "upvotes";
-      if (promptData[oppositeField].includes(userId)) {
-        await updateDoc(promptRef, {
-          [oppositeField]: promptData[oppositeField].filter(id => id !== userId)
-        });
-      }
+      updatedPrompt[voteField] = [...updatedPrompt[voteField], userId];
     }
   
-    setHasVoted(true);
-    fetchPromptsAndVotes();
+    updatedPrompts[promptIndex] = updatedPrompt;
+    setPrompts(updatedPrompts);
+  
+    // Update Firestore data
+    const promptRef = doc(db, "potentialPrompts", promptId);
+    await updateDoc(promptRef, {
+      [voteField]: updatedPrompt[voteField],
+      [oppositeField]: updatedPrompt[oppositeField],
+    });
   };
+  
+  
   
   
   
@@ -134,31 +147,30 @@ const PromptScreen = ({ navigation }) => {
 
   return (
     <ScrollView style={styles.container}>
-      {!isPromptAnswered ? (
-        <View>
-          <Text style={styles.headerText}>
-            {"You haven't responded to the prompt yet! Once you respond you can submit for next week."}
-          </Text>
-
-          <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Feed")}>
-            <Text style={styles.buttonText}>Go to Feed</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <View style={styles.addSubmissionContainer}>
-          <Text style={styles.addSubmissionText}>Add a submission for next week's prompt!</Text> 
-          <TextInput
-            value={newPotentialPrompt}
-            onChangeText={setNewPotentialPrompt}
-            style={styles.input}
-            autoCapitalize="none"
-            placeholder="Your question"
-          /> 
-          <TouchableOpacity onPress={handleAddPotentialPrompt} style={styles.addButton}>
-            <Text style={styles.addButtonLabel}>Add</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+     {!isPromptAnswered ? (
+  <View style={styles.addSubmissionContainer}>
+    <Text style={styles.addSubmissionText}>
+      You haven't responded to the prompt yet! Once you respond you can submit for next week.
+    </Text>
+    <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate("Feed")}>
+      <Text style={styles.addButtonLabel}>Go to Feed</Text>
+    </TouchableOpacity>
+  </View>
+) : (
+  <View style={styles.addSubmissionContainer}>
+    <Text style={styles.addSubmissionText}>Add a submission for next week's prompt!</Text>
+    <TextInput
+      value={newPotentialPrompt}
+      onChangeText={setNewPotentialPrompt}
+      style={styles.input}
+      autoCapitalize="none"
+      placeholder="Your question"
+    />
+    <TouchableOpacity onPress={handleAddPotentialPrompt} style={styles.addButton}>
+      <Text style={styles.addButtonLabel}>Add</Text>
+    </TouchableOpacity>
+  </View>
+)}
 
       <View style={styles.sortButtonsContainer}>
         <TouchableOpacity
@@ -209,6 +221,35 @@ const styles = StyleSheet.create({
     backgroundColor: "#87CEEB",
     padding: 20,
   },
+  headerContainer: {
+    backgroundColor: '#FFFFFF', 
+    padding: 15, 
+    borderRadius: 10, 
+    shadowColor: "#000", 
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84, 
+    elevation: 5, 
+    marginHorizontal: 10, 
+    marginBottom: 20,
+  },
+  headerText: {
+    fontSize: 18, 
+    textAlign: 'center', 
+    paddingHorizontal: 10, 
+    paddingTop: 5, 
+  },
+  separatorLine: {
+    height: 2,
+    backgroundColor: '#DDD', 
+    alignSelf: 'stretch', 
+    marginVertical: 10,  
+    width: '95%', 
+    alignSelf: 'center',
+  },
   promptContainer: {
     backgroundColor: "#FFF",
     borderRadius: 10,
@@ -252,16 +293,64 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     marginTop: 10,
-
   },
   sortButton: {
     borderRadius: 5,
     padding: 10,
     alignItems: "center",
   },
+  addSubmissionContainer: {
+    backgroundColor: '#FFFFFF', 
+    padding: 15, 
+    borderRadius: 10, 
+    shadowColor: "#000", 
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84, 
+    elevation: 5, 
+    marginHorizontal: 10, 
+    marginBottom: 20,
+  },
+  addSubmissionText: {
+    fontSize: 18, 
+    textAlign: 'center', 
+    paddingHorizontal: 10, 
+    paddingTop: 5, 
+    marginBottom: 10,
+  },
+  voteCount: {
+    marginLeft: 5,
+  },
+  input: {
+    backgroundColor: '#F5F5F5',
+    padding: 10,
+    backgroundColor: "#F0F0F0",
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 10,
+  },
+  addButton: {
+    backgroundColor: "#0782F9",
+    width: "50%",
+    backgroundColor: "#3B82F6",
+    borderRadius: 5,
+    padding: 10,
+    borderRadius: 10,
+    alignItems: "center",
+    alignSelf: "center",
+  },
+  addButtonLabel: {
+    color: "white",
+    fontWeight: "700",
+    fontSize: 16,
+  },
   sortButtonText: {
     fontWeight: "bold",
   },
+  
 });
 
 export default PromptScreen;
