@@ -249,18 +249,23 @@ export default function FeedScreen() {
   
 
   const fetchCommentsForEssence = async (essenceId, postUserId) => {
-    const userId = auth.currentUser?.uid;
     try {
       const commentsSnapshot = await getDocs(collection(db, `users/${postUserId}/essences/${essenceId}/comments`));
       const commentsList = [];
-      commentsSnapshot.forEach(doc => {
-        commentsList.push(doc.data());
-      });
+      for (const docSnapshot of commentsSnapshot.docs) {
+        const commentData = docSnapshot.data();
+        // Ensure the 'doc' function is correctly imported and used here
+        const userDocRef = doc(db, "users", commentData.userId);
+        const userSnapshot = await getDoc(userDocRef);
+        const username = userSnapshot.exists() ? userSnapshot.data().username : "Unknown";
+        commentsList.push({ ...commentData, username }); // Include username in the comment data
+      }
       setComments(prev => ({ ...prev, [essenceId]: commentsList }));
     } catch (error) {
       console.error("Error fetching comments: ", error);
     }
   };
+  
   
   
   
@@ -289,25 +294,23 @@ export default function FeedScreen() {
   
       {showComments[item.id] && (
         <View style={styles.commentsSection}>
-          <TextInput
-            style={styles.commentInput}
-            value={commentText[item.id] || ''}
-            onChangeText={(text) => setCommentText(prev => ({ ...prev, [item.id]: text }))}
-            placeholder="Write a comment..."
-          />
-        <TouchableOpacity onPress={() => handlePostComment(item.id, item.userId)} style={styles.postCommentButton}>
-          <Text style={styles.postCommentButtonText}>Post</Text>
-        </TouchableOpacity>
-
-          
-          {/* Display comments list here */}
+          <View style={styles.commentInputContainer}>
+            <TextInput
+              style={styles.commentInput}
+              value={commentText[item.id] || ''}
+              onChangeText={(text) => setCommentText(prev => ({ ...prev, [item.id]: text }))}
+              placeholder="Write a comment..."
+            />
+            <TouchableOpacity onPress={() => handlePostComment(item.id, item.userId)} style={styles.postCommentButton}>
+              <Text style={styles.postCommentButtonText}>Post</Text>
+            </TouchableOpacity>
+          </View>
           {comments[item.id] && comments[item.id].map((comment, index) => (
             <View key={index} style={styles.comment}>
-              <Text style={styles.commentText}>{comment.text}</Text>
-              {/* You can add more details like the commenter's name, comment date, etc. */}
+              <Text style={styles.commentText}>{comment.username} {comment.text}</Text>
             </View>
           ))}
-        </View>
+      </View>
       )}
     </View>
   );
@@ -487,18 +490,19 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   commentInput: {
+    flex: 1, // Take up all space but leave room for button
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
     padding: 8,
-    marginBottom: 10,
   },
   postCommentButton: {
+    marginLeft: 8,
     backgroundColor: "#3B82F6",
     borderRadius: 5,
-    padding: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
     alignItems: 'center',
-    marginBottom: 10,
   },
   postCommentButtonText: {
     color: 'white',
@@ -512,5 +516,10 @@ const styles = StyleSheet.create({
   commentText: {
     fontSize: 14,
     color: '#333',
+  },
+  commentInputContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
 });
