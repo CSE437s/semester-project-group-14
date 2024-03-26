@@ -212,9 +212,14 @@ export default function FeedScreen() {
   };
 
 
-  const toggleCommentsVisibility = (essenceId) => {
+  const toggleCommentsVisibility = async (essenceId, postUserId) => {
     setShowComments(prev => ({ ...prev, [essenceId]: !prev[essenceId] }));
+  
+    if (!showComments[essenceId]) {
+      await fetchCommentsForEssence(essenceId, postUserId);
+    }
   };
+  
   
   
 
@@ -287,7 +292,7 @@ export default function FeedScreen() {
         </TouchableOpacity>
         
         {/* Comments button */}
-        <TouchableOpacity onPress={() => toggleCommentsVisibility(item.id)} style={styles.commentButton}>
+        <TouchableOpacity onPress={() => toggleCommentsVisibility(item.id, item.userId)} style={styles.commentButton}>
           <Ionicons name="chatbubble-outline" size={24} color="#3B82F6" />
         </TouchableOpacity>
       </View>
