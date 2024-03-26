@@ -19,6 +19,12 @@ export default function FeedScreen() {
   const [userResponse, setUserResponse] = useState(null);
   const [prompt, setPrompt, isPromptAnswered, setIsPromptAnswered] = useContext(PromptContext); // Destructuring context values
   const [newEssence, setNewEssence] = useState("");
+  const [showComments, setShowComments] = useState({});
+  const [commentText, setCommentText] = useState({});
+  const [comments, setComments] = useState({});
+
+  
+
   const insets = useSafeAreaInsets();
   useEffect(() => {
     const fetchData = async () => {
@@ -98,8 +104,6 @@ export default function FeedScreen() {
   
     fetchData();
   }, [prompt]);
-  
-
 
 
   //FOR PROMPT HANDLING
@@ -206,6 +210,60 @@ export default function FeedScreen() {
   
     setFeedData(updatedFeedData);
   };
+
+
+  const toggleCommentsVisibility = (essenceId) => {
+    setShowComments(prev => ({ ...prev, [essenceId]: !prev[essenceId] }));
+  };
+  
+  
+
+  const handlePostComment = async (essenceId, postUserId) => {
+    const userId = auth.currentUser?.uid;
+    const newCommentText = commentText[essenceId] || '';
+  
+    if (newCommentText.trim() && userId) {
+      try {
+        await addDoc(collection(db, `users/${postUserId}/essences/${essenceId}/comments`), {
+          userId,
+          text: newCommentText,
+          createdAt: new Date(),
+        });
+  
+        console.log("Comment added");
+        fetchCommentsForEssence(essenceId);
+        // Reset the comment input field
+        setCommentText(prevState => ({ ...prevState, [essenceId]: '' }));
+  
+        // Refresh comments to show the newly added one
+        fetchCommentsForEssence(essenceId, postUserId);
+      } catch (error) {
+        console.error("Error adding comment: ", error);
+        alert("Failed to post comment. Please try again.");
+      }
+    } else {
+      alert("Comment cannot be empty.");
+    }
+  };
+  
+  
+
+  const fetchCommentsForEssence = async (essenceId, postUserId) => {
+    const userId = auth.currentUser?.uid;
+    try {
+      const commentsSnapshot = await getDocs(collection(db, `users/${postUserId}/essences/${essenceId}/comments`));
+      const commentsList = [];
+      commentsSnapshot.forEach(doc => {
+        commentsList.push(doc.data());
+      });
+      setComments(prev => ({ ...prev, [essenceId]: commentsList }));
+    } catch (error) {
+      console.error("Error fetching comments: ", error);
+    }
+  };
+  
+  
+  
   
   
 
@@ -216,12 +274,44 @@ export default function FeedScreen() {
         <Text style={styles.username}>{item.username}</Text>
       </View>
       <Text style={styles.response}>{item.response}</Text>
-      <TouchableOpacity onPress={() => handleLike(item.id, item.userId)} style={styles.likeButton}>
-        <Ionicons name={item.liked ? 'heart' : 'heart-outline'} size={20} color={item.liked ? "#3B82F6" : "#3B82F6"} />
-        <Text style={styles.likeCount}>{item.numLikes}</Text>
-      </TouchableOpacity>
+      <View style={styles.interactionBar}>
+        {/* Like button */}
+        <TouchableOpacity onPress={() => handleLike(item.id, item.userId)} style={styles.likeButton}>
+          <Ionicons name={item.liked ? 'heart' : 'heart-outline'} size={20} color={item.liked ? "#3B82F6" : "#3B82F6"} />
+          <Text style={styles.likeCount}>{item.numLikes}</Text>
+        </TouchableOpacity>
+        
+        {/* Comments button */}
+        <TouchableOpacity onPress={() => toggleCommentsVisibility(item.id)} style={styles.commentButton}>
+          <Ionicons name="chatbubble-outline" size={24} color="#3B82F6" />
+        </TouchableOpacity>
+      </View>
+  
+      {showComments[item.id] && (
+        <View style={styles.commentsSection}>
+          <TextInput
+            style={styles.commentInput}
+            value={commentText[item.id] || ''}
+            onChangeText={(text) => setCommentText(prev => ({ ...prev, [item.id]: text }))}
+            placeholder="Write a comment..."
+          />
+        <TouchableOpacity onPress={() => handlePostComment(item.id, item.userId)} style={styles.postCommentButton}>
+          <Text style={styles.postCommentButtonText}>Post</Text>
+        </TouchableOpacity>
+
+          
+          {/* Display comments list here */}
+          {comments[item.id] && comments[item.id].map((comment, index) => (
+            <View key={index} style={styles.comment}>
+              <Text style={styles.commentText}>{comment.text}</Text>
+              {/* You can add more details like the commenter's name, comment date, etc. */}
+            </View>
+          ))}
+        </View>
+      )}
     </View>
   );
+  
   
 
   return (
@@ -383,5 +473,44 @@ const styles = StyleSheet.create({
   likeCount: {
     color: "#3B82F6",
     marginLeft: 5,
-  }
+  },
+  interactionBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  commentButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  commentsSection: {
+    marginTop: 10,
+  },
+  commentInput: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 8,
+    marginBottom: 10,
+  },
+  postCommentButton: {
+    backgroundColor: "#3B82F6",
+    borderRadius: 5,
+    padding: 10,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  postCommentButtonText: {
+    color: 'white',
+  },
+  comment: {
+    marginTop: 5,
+    padding: 8,
+    backgroundColor: '#f2f2f2',
+    borderRadius: 5,
+  },
+  commentText: {
+    fontSize: 14,
+    color: '#333',
+  },
 });
