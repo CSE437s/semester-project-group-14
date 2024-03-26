@@ -65,7 +65,7 @@ export default function App() {
   
     const interval = setInterval(() => {
       getTopVotedPrompt();
-    }, 400000);
+    }, 604800000);
   
     return () => clearInterval(interval);
   }, []);
