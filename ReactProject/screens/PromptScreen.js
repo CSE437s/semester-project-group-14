@@ -84,7 +84,9 @@ const PromptScreen = ({ navigation }) => {
     });
   };
   
-  
+  useEffect(() => {
+    fetchPromptsAndVotes();
+  }, [prompts]);
   
   
   
