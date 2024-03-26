@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { Image, View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { db, auth } from '../firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { followUser, unfollowUser } from '../services/UserService';
@@ -86,6 +86,10 @@ const FollowScreen = () => {
           keyExtractor={item => item.id}
           renderItem={({ item }) => (
             <View style={styles.userItem}>
+              <Image
+                    source={require("../assets/profile-pic.jpg")} // Use a dynamic source if available
+                    style={styles.avatar}
+                  />
               <Text style={styles.username}>{item.username}</Text>
               <TouchableOpacity
                 style={[
@@ -110,16 +114,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#87CEEB',
+    backgroundColor: '#c0e0ed',
   },
   input: {
-    height: 40,
+    height: 50,
     backgroundColor: 'white',
     borderColor: '#B0BEC5',
     borderWidth: 1,
     marginBottom: 20,
     paddingHorizontal: 10,
-    borderRadius: 20,
+    borderRadius: 10,
   },
   userItem: {
     flexDirection: 'row',
@@ -127,13 +131,14 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#CFD8DC',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     backgroundColor: 'white',
     borderRadius: 8,
-    marginBottom: 10,
+    marginVertical: 5,
     paddingHorizontal: 10,
   },
   username: {
+    flex: 1,
     fontSize: 16,
     color: "#37474F",
   },
@@ -145,6 +150,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   followButton: {
+    marginRight: 0,
     backgroundColor: "#1E88E5", // Follow button with blue background
   },
   unfollowButton: {
@@ -159,6 +165,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 16,
     color: "#37474F",
+  },
+  avatar: {
+    width: 40, 
+    height: 40, 
+    borderRadius: 20, 
+    marginRight: 10,
+    backgroundColor: "black"
   },
 });
 

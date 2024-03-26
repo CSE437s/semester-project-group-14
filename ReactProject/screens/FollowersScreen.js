@@ -58,7 +58,8 @@ const FollowersScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF', 
+    backgroundColor: '#c0e0ed', 
+    padding: 20,
   },
   loadingText: {
     textAlign: 'center',
@@ -68,9 +69,14 @@ const styles = StyleSheet.create({
   userItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 10,
+    paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0', // Subtle separation
+    borderBottomColor: '#CFD8DC',
+    justifyContent: 'flex-start',
+    backgroundColor: 'white',
+    borderRadius: 8,
+    marginVertical: 5,
+    paddingHorizontal: 10,
   },
   avatar: {
     width: 40, 

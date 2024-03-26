@@ -218,43 +218,14 @@ const PromptScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#87CEEB",
-    padding: 20,
-  },
-  headerContainer: {
-    backgroundColor: '#FFFFFF', 
-    padding: 15, 
-    borderRadius: 10, 
-    shadowColor: "#000", 
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84, 
-    elevation: 5, 
-    marginHorizontal: 10, 
-    marginBottom: 20,
-  },
-  headerText: {
-    fontSize: 18, 
-    textAlign: 'center', 
-    paddingHorizontal: 10, 
-    paddingTop: 5, 
-  },
-  separatorLine: {
-    height: 2,
-    backgroundColor: '#DDD', 
-    alignSelf: 'stretch', 
-    marginVertical: 10,  
-    width: '95%', 
-    alignSelf: 'center',
+    backgroundColor: "#c0e0ed",
+    padding: 25,
   },
   promptContainer: {
     backgroundColor: "#FFF",
     borderRadius: 10,
     padding: 15,
-    margin: 10,
+    marginVertical: 10,
   },
   promptText: {
     fontSize: 16,
@@ -293,6 +264,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     marginTop: 10,
+    marginBottom: 15
   },
   sortButton: {
     borderRadius: 5,
@@ -311,7 +283,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84, 
     elevation: 5, 
-    marginHorizontal: 10, 
     marginBottom: 20,
   },
   addSubmissionText: {

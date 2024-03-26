@@ -254,20 +254,16 @@ export default function FeedScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeContainer: {
-    flex: 1,
-    backgroundColor: '#87CEEB',
-  },
   container: {
     flex: 1,
-    padding: 10,
-    backgroundColor: "#87CEEB",
+    padding: 20,
+    backgroundColor: "#c0e0ed",
   },
   card: {
     backgroundColor: "white",
     borderRadius: 8,
     padding: 16,
-    marginBottom: 12,
+    marginVertical: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
