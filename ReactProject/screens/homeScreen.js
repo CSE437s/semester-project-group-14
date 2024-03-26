@@ -7,6 +7,7 @@ import {
   FlatList,
   Image,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/core";
 import { useFocusEffect } from "@react-navigation/native";
@@ -18,9 +19,13 @@ import {
   doc,
   onSnapshot,
   query,
+setDoc,
   orderBy,
+  updateDoc
 } from "firebase/firestore";
 import { fetchFollowerCount, fetchFollowingCount } from "../services/UserService";
+import * as ImagePicker from 'expo-image-picker';
+
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -29,7 +34,7 @@ const HomeScreen = () => {
   const [followerCount, setFollowerCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [username, setUsername] = useState('');
-
+  const [profilePic, setProfilePic] = useState(null); 
 
   useEffect(() => {
     const userId = auth.currentUser?.uid;
@@ -94,7 +99,6 @@ const HomeScreen = () => {
   
     fetchUsername();
   }, []);
-  
 
   const handleSignOut = () => {
     auth
@@ -116,13 +120,86 @@ const HomeScreen = () => {
     navigation.navigate("Prompt");
   };
 
+  useEffect(() => {
+    const fetchProfilePic = async () => {
+      const currentUserId = auth.currentUser?.uid;
+      if (currentUserId) {
+        try {
+          const userDocRef = doc(db, "users", currentUserId);
+          const userDocSnapshot = await getDoc(userDocRef);
+  
+          if (userDocSnapshot.exists()) {
+            const userData = userDocSnapshot.data();
+            if (userData && userData.profilePicUrl) {
+              setProfilePic(userData.profilePicUrl);
+            } else {
+              console.log("Profile picture not found for current user");
+            }
+          } else {
+            console.error("User document does not exist for current user");
+          }
+        } catch (error) {
+          console.error("Error getting profile picture:", error);
+        }
+      } else {
+        console.error("Current user ID is not available");
+      }
+    };
+  
+    fetchProfilePic();
+  }, []);
+  
+  const handleProfilePictureSelect = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permissionResult.granted) {
+        Alert.alert(
+          'Permission Denied',
+          'Please enable permissions to access the camera roll to select a profile picture.'
+        );
+        return;
+      }
+  
+      const pickerResult = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 1,
+      });
+  
+      if (!pickerResult.cancelled) {
+        const uri = pickerResult.assets[0].uri;
+
+        const currentUserId = auth.currentUser?.uid;
+        
+        if (currentUserId) {
+          try {
+            const userDocRef = doc(db, "users", currentUserId);
+            await updateDoc(userDocRef, { profilePicUrl: uri });
+            setProfilePic(uri);
+          } catch (error) {
+            console.error("Error updating profile picture URL:", error);
+          }
+        } else {
+          console.error("Current user ID is not available");
+        }
+      }
+    } catch (error) {
+      console.error("Error selecting profile picture:", error);
+    }
+  };
+  
+  
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Image
-          source={require("./../assets/profile-pic.jpg")}
-          style={styles.profilePicture}
-        />
+        <TouchableOpacity onPress={handleProfilePictureSelect}>
+        <Image   source={profilePic ? { uri: profilePic } : require("./../assets/profile-pic.jpg")}
+ style={styles.profilePicture} />
+
+       
+        </TouchableOpacity>
         <View style={styles.userInfo}>
           <Text style={styles.greeting}>Welcome, {username || auth.currentUser?.email}</Text>
           <Text style={styles.userBio}>Share and discover the small joys in life.</Text>
@@ -213,66 +290,67 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-  essenceItem: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    padding: 15,
-    margin: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  essenceTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 5,
-    color: "#333",
-  },
-  essenceResponse: {
-    fontSize: 14,
-    color: "#666",
-  },
-  signOutButton: {
-    backgroundColor: "#FF7F7F",
-    borderRadius: 20,
-    padding: 15,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 2.5,
-    marginBottom: 5, 
-    width: 100,
-    marginLeft: 125,
-  },
-  signOutButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
-    marginBottom: 20,
-  },
-  statsBox: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  statsCount: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  statsLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 5,
-  },
-});
-
-export default HomeScreen;
+    essenceItem: {
+      backgroundColor: "#fff",
+      borderRadius: 10,
+      padding: 15,
+      margin: 5,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    essenceTitle: {
+      fontSize: 16,
+      fontWeight: "bold",
+      marginBottom: 5,
+      color: "#333",
+    },
+    essenceResponse: {
+      fontSize: 14,
+      color: "#666",
+    },
+    signOutButton: {
+      backgroundColor: "#FF7F7F",
+      borderRadius: 20,
+      padding: 15,
+      justifyContent: "center",
+      alignItems: "center",
+      marginTop: 2.5,
+      marginBottom: 5, 
+      width: 100,
+      marginLeft: 125,
+    },
+    signOutButtonText: {
+      color: "#fff",
+      fontSize: 16,
+      fontWeight: "bold",
+    },
+    statsContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginTop: 10,
+      marginBottom: 20,
+    },
+    statsBox: {
+      alignItems: 'center',
+      flex: 1,
+    },
+    statsCount: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: '#333',
+    },
+    statsLabel: {
+      fontSize: 14,
+      color: '#666',
+      marginTop: 5,
+    },
+  });
+  
+  export default HomeScreen;
+  

@@ -56,14 +56,11 @@ const PromptScreen = ({ navigation }) => {
       oppositeField = "upvotes";
     }
   
-    // Fetch existing prompt data
     const upvotes = updatedPrompt.upvotes || [];
     const downvotes = updatedPrompt.downvotes || [];
   
-    // Check if the user has already voted
     const hasVoted = upvotes.includes(userId) || downvotes.includes(userId);
   
-    // If the user has already voted, switch their vote
     if (hasVoted) {
       updatedPrompt[voteField] = updatedPrompt[voteField].includes(userId)
         ? updatedPrompt[voteField].filter((id) => id !== userId)
@@ -73,7 +70,6 @@ const PromptScreen = ({ navigation }) => {
         updatedPrompt[oppositeField] = updatedPrompt[oppositeField].filter((id) => id !== userId);
       }
     } else {
-      // Add the user's vote
       updatedPrompt[voteField] = [...updatedPrompt[voteField], userId];
     }
   

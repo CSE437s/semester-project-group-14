@@ -7,7 +7,7 @@ import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "./tamagui.config";
 import FooterNavigator from "./Components/FooterNavigator";
 // import HomeScreen from "./screens/HomeScreen";
-import LoginScreen from "./screens/loginScreen";
+import LoginScreen from "./screens/LoginScreen";
 import RegisterScreen from "./screens/RegisterScreen";
 import FollowScreen from "./screens/FollowScreen";
 import FollowersScreen from "./screens/FollowersScreen";
