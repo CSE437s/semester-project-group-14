@@ -97,7 +97,7 @@ const LoginScreen = () => {
       </View>
       <View style={styles.inputContainer}>
         <TextInput
-        autoCapitalize="none"
+          autoCapitalize="none"
           placeholder="Email or Username"
           value={loginInput}
           onChangeText={setLoginInput}
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     flex: 1,
-    backgroundColor: "#c0e0ed",
+    backgroundColor: "#87CEEB",
   },
 
   inputContainer: {

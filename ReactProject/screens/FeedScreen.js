@@ -48,6 +48,8 @@ export default function FeedScreen() {
               const essenceData = essenceDoc.data();
               const likesQuerySnapshot = await getDocs(collection(db, `users/${essenceData.userId}/essences/${essenceDoc.id}/likes`));
               const numLikes = likesQuerySnapshot.size;
+              const commentsQuerySnapshot = await getDocs(collection(db, `users/${essenceData.userId}/essences/${essenceDoc.id}/comments`));
+              const numComments = commentsQuerySnapshot.size;
               const likesRef = collection(db, `users/${essenceData.userId}/essences/${essenceDoc.id}/likes`);
               const querySnapshot = await getDocs(
                 query(likesRef, where("userId", "==", currentUserId))
@@ -73,6 +75,7 @@ export default function FeedScreen() {
                   ...essenceData,
                   username,
                   numLikes,
+                  numComments,
                   liked,
                   profilePicUrl, 
                 };
@@ -293,7 +296,8 @@ export default function FeedScreen() {
         
         {/* Comments button */}
         <TouchableOpacity onPress={() => toggleCommentsVisibility(item.id, item.userId)} style={styles.commentButton}>
-          <Ionicons name="chatbubble-outline" size={24} color="#3B82F6" />
+          <Ionicons name="chatbubble-outline" size={20} color="#3B82F6" />
+          <Text style={styles.likeCount}>{item.numComments}</Text>
         </TouchableOpacity>
       </View>
   
