@@ -307,11 +307,13 @@ export default function FeedScreen() {
           </View>
           {comments[item.id] && comments[item.id].map((comment, index) => (
             <View key={index} style={styles.comment}>
-              <Text style={styles.commentText}>{comment.username} {comment.text}</Text>
+              <Text style={styles.commentUsername}>{comment.username}</Text>
+              <Text style={styles.commentText}>{comment.text}</Text>
             </View>
           ))}
-      </View>
+        </View>
       )}
+
     </View>
   );
   
@@ -490,18 +492,18 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   commentInput: {
-    flex: 1, // Take up all space but leave room for button
+    flex: 1,
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
     padding: 8,
+    marginRight: 10,
   },
   postCommentButton: {
-    marginLeft: 8,
     backgroundColor: "#3B82F6",
     borderRadius: 5,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
+    padding: 10,
+    justifyContent: 'center',
     alignItems: 'center',
   },
   postCommentButtonText: {
@@ -513,13 +515,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#f2f2f2',
     borderRadius: 5,
   },
+  commentUsername: {
+    fontWeight: 'bold',
+    color: '#3B82F6', 
+  },
   commentText: {
     fontSize: 14,
     color: '#333',
   },
+  commentText: {
+    fontSize: 14,
+    color: '#333',
+    marginTop: 2,
+  },
   commentInputContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 10,
   },
 });
