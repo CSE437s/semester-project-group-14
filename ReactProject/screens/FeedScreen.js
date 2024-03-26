@@ -86,6 +86,9 @@ export default function FeedScreen() {
     
             const essencesWithData = await Promise.all(essencesDataPromises);
             const filteredEssences = essencesWithData.filter(essence => essence !== null);
+    
+            filteredEssences.sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate());
+    
             setFeedData(filteredEssences);
           });
     
@@ -103,6 +106,7 @@ export default function FeedScreen() {
         setLoading(false);
       }
     };
+    
     
   
     fetchData();
