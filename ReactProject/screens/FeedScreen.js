@@ -28,13 +28,13 @@ export default function FeedScreen() {
           setLoading(false);
           return;
         }
-  
+    
         const currentUserId = auth.currentUser?.uid;
-  
+    
         const followingRef = collection(db, "users", currentUserId, "following");
-        const unsubscribeFollowing = onSnapshot(followingRef, (snapshot) => {
+        const unsubscribeFollowing = onSnapshot(followingRef, async (snapshot) => {
           const followingIds = snapshot.docs.map(doc => doc.id);
-  
+    
           const essencesRef = collectionGroup(db, "essences");
           const q = query(essencesRef, where("prompt", "==", prompt));
           const unsubscribeEssences = onSnapshot(q, async (querySnapshot) => {
@@ -46,39 +46,45 @@ export default function FeedScreen() {
               const querySnapshot = await getDocs(
                 query(likesRef, where("userId", "==", currentUserId))
               );
-              
+    
               const liked = !querySnapshot.empty;
-  
+    
               let username = "USER"; // Default username
+              let profilePicUrl = ""; 
               if (essenceData.userId) {
                 const userDocRef = doc(db, "users", essenceData.userId);
-                const userDoc = await getDoc(userDocRef);
-                username = userDoc.exists() ? userDoc.data().username || "USER" : "Unknown User";
+                const userDocSnapshot = await getDoc(userDocRef);
+                if (userDocSnapshot.exists()) {
+                  const userData = userDocSnapshot.data();
+                  username = userData.username || "USER";
+                  profilePicUrl = userData.profilePicUrl || ""; 
+                }
               }
-  
+    
               if (followingIds.includes(essenceData.userId)) {
                 return {
                   id: essenceDoc.id,
                   ...essenceData,
                   username,
                   numLikes,
-                  liked, 
+                  liked,
+                  profilePicUrl, 
                 };
               } else {
-                return null; 
+                return null;
               }
             });
-  
+    
             const essencesWithData = await Promise.all(essencesDataPromises);
             const filteredEssences = essencesWithData.filter(essence => essence !== null);
             setFeedData(filteredEssences);
           });
-  
+    
           return () => {
             unsubscribeEssences();
           };
         });
-  
+    
         return () => {
           unsubscribeFollowing();
         };
@@ -88,6 +94,7 @@ export default function FeedScreen() {
         setLoading(false);
       }
     };
+    
   
     fetchData();
   }, [prompt]);
@@ -205,7 +212,7 @@ export default function FeedScreen() {
   const renderItem = ({ item }) => (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
-        <Image source={require("../assets/profile-pic.jpg")} style={styles.avatar} />
+        <Image source={item.profilePicUrl ? { uri: item.profilePicUrl } : require("./../assets/profile-pic.jpg")} style={styles.avatar} />
         <Text style={styles.username}>{item.username}</Text>
       </View>
       <Text style={styles.response}>{item.response}</Text>

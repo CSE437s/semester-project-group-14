@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Image, View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { db, auth } from '../firebaseConfig';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, doc,getDoc, where, getDocs } from 'firebase/firestore';
 import { followUser, unfollowUser } from '../services/UserService';
 
 const FollowScreen = () => {
@@ -37,20 +37,32 @@ const FollowScreen = () => {
         where('username', '>=', searchTerm),
         where('username', '<=', searchTerm + '\uf8ff')
       );
-
+    
       try {
         const querySnapshot = await getDocs(q);
         const usersList = querySnapshot.docs
           .map(doc => ({ id: doc.id, ...doc.data() }))
           .filter(doc => doc.id !== auth.currentUser?.uid);
-
-        setUsers(usersList);
+    
+        const usersWithProfilePicsPromises = usersList.map(async user => {
+          const userDocRef = doc(db, "users", user.id);
+          const userDocSnapshot = await getDoc(userDocRef);
+          if (userDocSnapshot.exists()) {
+            const userData = userDocSnapshot.data();
+            return { ...user, profilePicUrl: userData.profilePicUrl };
+          }
+        });
+    
+        const usersWithProfilePics = await Promise.all(usersWithProfilePicsPromises);
+    
+        setUsers(usersWithProfilePics.filter(user => user)); 
       } catch (error) {
         console.error('Error searching users:', error);
       } finally {
         setLoading(false);
       }
     };
+    
 
     const handler = setTimeout(() => {
       search();
@@ -87,9 +99,9 @@ const FollowScreen = () => {
           renderItem={({ item }) => (
             <View style={styles.userItem}>
               <Image
-                    source={require("../assets/profile-pic.jpg")} // Use a dynamic source if available
-                    style={styles.avatar}
-                  />
+                source={item.profilePicUrl ? { uri: item.profilePicUrl } : require("./../assets/profile-pic.jpg")}
+                style={styles.avatar}
+              />
               <Text style={styles.username}>{item.username}</Text>
               <TouchableOpacity
                 style={[
@@ -171,7 +183,6 @@ const styles = StyleSheet.create({
     height: 40, 
     borderRadius: 20, 
     marginRight: 10,
-    backgroundColor: "black"
   },
 });
 
