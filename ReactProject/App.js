@@ -13,7 +13,7 @@ import FollowScreen from "./screens/FollowScreen";
 import FollowersScreen from "./screens/FollowersScreen";
 import FollowingScreen from "./screens/FollowingScreen";
 import { db, auth } from "./firebaseConfig";
-import { collection, deleteDoc,getDocs } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import PromptContext from "./contexts/PromptContext";
 
 
@@ -33,43 +33,25 @@ export default function App() {
     return unsubscribe;
   }, []);
   useEffect(() => {
-    const getTopVotedPrompt = async () => {
-      const promptsRef = collection(db, "potentialPrompts");
+    const getRandomPrompt = async () => {
+      const promptsRef = collection(db, "prompts");
       const promptSnapshot = await getDocs(promptsRef);
-      let topPrompt = null;
-      let maxVotes = -Infinity;
-  
+      const promptList = [];
       promptSnapshot.forEach((doc) => {
-        const data = doc.data();
-        console.log(data.Description);
-
-        const netVotes = data.upvotes - data.downvotes;
-        
-        if (netVotes > maxVotes) {
-          maxVotes = netVotes;
-          topPrompt = data.Description;
-        }
-
+        promptList.push(doc.data().question);
       });
-  
-      if (topPrompt) {
-        setPrompt(topPrompt);
-        promptSnapshot.forEach(async (doc) => {
-          await deleteDoc(doc.ref);
-        });
-      }
-    
+      const randomIndex = Math.floor(Math.random() * promptList.length);
+      setPrompt(promptList[randomIndex]);
     };
-  
-    getTopVotedPrompt();
-  
+
+    getRandomPrompt();
+
     const interval = setInterval(() => {
-      getTopVotedPrompt();
+      getRandomPrompt();
     }, 604800000);
-  
+
     return () => clearInterval(interval);
   }, []);
-  
 
   return (
     <PromptContext.Provider value={ [prompt, setPrompt, isPromptAnswered, setIsPromptAnswered] }>
