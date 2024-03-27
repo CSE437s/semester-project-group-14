@@ -8,7 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView, SafeAreaProvider, useSafeAreaInsets, } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-
+import moment from 'moment';
 
 
 export default function FeedScreen() {
@@ -280,55 +280,62 @@ export default function FeedScreen() {
   
   
   
-  
-  
-  
-
-  const renderItem = ({ item }) => (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <Image source={item.profilePicUrl ? { uri: item.profilePicUrl } : require("./../assets/profile-pic.jpg")} style={styles.avatar} />
-        <Text style={styles.username}>{item.username}</Text>
-      </View>
-      <Text style={styles.response}>{item.response}</Text>
-      <View style={styles.interactionBar}>
-        {/* Like button */}
-        <TouchableOpacity onPress={() => handleLike(item.id, item.userId)} style={styles.likeButton}>
-          <Ionicons name={item.liked ? 'heart' : 'heart-outline'} size={20} color={item.liked ? "#3B82F6" : "#3B82F6"} />
-          <Text style={styles.likeCount}>{item.numLikes}</Text>
-        </TouchableOpacity>
-        
-        {/* Comments button */}
-        <TouchableOpacity onPress={() => toggleCommentsVisibility(item.id, item.userId)} style={styles.commentButton}>
-          <Ionicons name="chatbubble-outline" size={20} color="#3B82F6" />
-          <Text style={styles.likeCount}>{item.numComments}</Text>
-        </TouchableOpacity>
-      </View>
-  
-      {showComments[item.id] && (
-        <View style={styles.commentsSection}>
-          <View style={styles.commentInputContainer}>
-            <TextInput
-              style={styles.commentInput}
-              value={commentText[item.id] || ''}
-              onChangeText={(text) => setCommentText(prev => ({ ...prev, [item.id]: text }))}
-              placeholder="Write a comment..."
-            />
-            <TouchableOpacity onPress={() => handlePostComment(item.id, item.userId)} style={styles.postCommentButton}>
-              <Text style={styles.postCommentButtonText}>Post</Text>
-            </TouchableOpacity>
+  const renderItem = ({ item }) => {
+    const timeAgo = moment(item.createdAt.toDate()).fromNow();
+    return (
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <Image source={item.profilePicUrl ? { uri: item.profilePicUrl } : require("./../assets/profile-pic.jpg")} style={styles.avatar} />
+          <View style={styles.timestampContainer}>
+            
+          <Text style={styles.username}>{item.username}</Text>
+            <Text style={styles.timestamp}>{timeAgo}</Text> 
           </View>
-          {comments[item.id] && comments[item.id].map((comment, index) => (
-            <View key={index} style={styles.comment}>
-              <Text style={styles.commentUsername}>{comment.username}</Text>
-              <Text style={styles.commentText}>{comment.text}</Text>
-            </View>
-          ))}
         </View>
-      )}
-
-    </View>
-  );
+        <Text style={styles.response}>{item.response}</Text>
+        <View style={styles.interactionBar}>
+          {/* Like button */}
+          <TouchableOpacity onPress={() => handleLike(item.id, item.userId)} style={styles.likeButton}>
+            <Ionicons name={item.liked ? 'heart' : 'heart-outline'} size={20} color={item.liked ? "#3B82F6" : "#3B82F6"} />
+            <Text style={styles.likeCount}>{item.numLikes}</Text>
+          </TouchableOpacity>
+          
+          {/* Comments button */}
+          <TouchableOpacity onPress={() => toggleCommentsVisibility(item.id, item.userId)} style={styles.commentButton}>
+            <Ionicons name="chatbubble-outline" size={20} color="#3B82F6" />
+            <Text style={styles.likeCount}>{item.numComments}</Text>
+          </TouchableOpacity>
+        </View>
+  
+        {showComments[item.id] && (
+          <View style={styles.commentsSection}>
+            <View style={styles.commentInputContainer}>
+              <TextInput
+                style={styles.commentInput}
+                value={commentText[item.id] || ''}
+                onChangeText={(text) => setCommentText(prev => ({ ...prev, [item.id]: text }))}
+                placeholder="Write a comment..."
+              />
+              <TouchableOpacity onPress={() => handlePostComment(item.id, item.userId)} style={styles.postCommentButton}>
+                <Text style={styles.postCommentButtonText}>Post</Text>
+              </TouchableOpacity>
+            </View>
+            {comments[item.id] && comments[item.id].map((comment, index) => (
+              <View key={index} style={styles.comment}>
+                <View style={styles.timestampContainer}>
+                <Text style={styles.commentUsername}>{comment.username}</Text>
+                 <Text style={styles.timestamp}>{moment(comment.createdAt.toDate()).fromNow()}</Text> 
+              </View>
+                <Text style={styles.commentText}>{comment.text}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+    );
+  };
+  
+  
   
   
 
@@ -388,6 +395,7 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: "row",
     alignItems: "center",
+    textAlignVertical:'center',
     marginBottom: 8,
   },
   avatar: {
@@ -546,4 +554,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
+  timestampContainer: {
+    flex: 1,
+    alignItems: 'flex-end',
+    flexDirection: 'row',
+
+    
+  },
+  timestamp: {
+    color: '#999',
+    marginLeft: 'auto',
+
+  },
+  commentTimestamp: {
+    fontSize: 12,
+    color: "#999",
+    marginBottom: 2,
+  },
+  
+  
 });
