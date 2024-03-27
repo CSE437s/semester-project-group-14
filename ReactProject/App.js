@@ -13,7 +13,7 @@ import FollowScreen from "./screens/FollowScreen";
 import FollowersScreen from "./screens/FollowersScreen";
 import FollowingScreen from "./screens/FollowingScreen";
 import { db, auth } from "./firebaseConfig";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, deleteDoc,getDocs } from "firebase/firestore";
 import PromptContext from "./contexts/PromptContext";
 
 
@@ -32,26 +32,46 @@ export default function App() {
 
     return unsubscribe;
   }, []);
-  useEffect(() => {
-    const getRandomPrompt = async () => {
-      const promptsRef = collection(db, "prompts");
-      const promptSnapshot = await getDocs(promptsRef);
-      const promptList = [];
-      promptSnapshot.forEach((doc) => {
-        promptList.push(doc.data().question);
-      });
-      const randomIndex = Math.floor(Math.random() * promptList.length);
-      setPrompt(promptList[randomIndex]);
+useEffect(() => {
+    let isMounted = true;
+
+    const getTopVotedPrompt = async () => {
+        const promptsRef = collection(db, "potentialPrompts");
+        const promptSnapshot = await getDocs(promptsRef);
+        let topPrompt = null;
+        let maxVotes = -Infinity;
+
+        promptSnapshot.forEach((doc) => {
+            const data = doc.data();
+            const netVotes = data.upvotes - data.downvotes;
+
+            if (netVotes > maxVotes) {
+                maxVotes = netVotes;
+                topPrompt = data.Description;
+            }
+        });
+
+        if (isMounted && topPrompt) {
+            setPrompt(topPrompt);
+            promptSnapshot.forEach(async (doc) => {
+                await deleteDoc(doc.ref);
+            });
+        }
     };
 
-    getRandomPrompt();
+    getTopVotedPrompt();
 
     const interval = setInterval(() => {
-      getRandomPrompt();
-    }, 604800000);
+        getTopVotedPrompt();
+    },  604800000);
 
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+        isMounted = false;
+        clearInterval(interval);
+    };
+}, []);
+
+  
 
   return (
     <PromptContext.Provider value={ [prompt, setPrompt, isPromptAnswered, setIsPromptAnswered] }>
