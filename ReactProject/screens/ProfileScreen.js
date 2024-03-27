@@ -16,6 +16,7 @@ import {
   collection,
   addDoc,
   getDoc,
+  getDocs,
   doc,
   onSnapshot,
   query,
@@ -43,7 +44,7 @@ const ProfileScreen = () => {
   useEffect(() => {
     const fetchFollowing = async () => {
       if (userId) {
-        const followingRef = collection(db, 'users', userId, 'following');
+        const followingRef = collection(db, 'users', userId, 'followers');
         const snapshot = await getDocs(followingRef);
         const followingIds = snapshot.docs.map(doc => doc.id);
         setFollowedUserIds(followingIds);
