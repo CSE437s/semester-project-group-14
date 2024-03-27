@@ -10,7 +10,7 @@ import {
   Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/core";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useRoute } from "@react-navigation/native";
 import { auth, db } from "../firebaseConfig";
 import {
   collection,
@@ -25,19 +25,36 @@ setDoc,
 } from "firebase/firestore";
 import { fetchFollowerCount, fetchFollowingCount } from "../services/UserService";
 import * as ImagePicker from 'expo-image-picker';
+import { followUser, unfollowUser } from '../services/UserService';
 
 
-const HomeScreen = () => {
+const ProfileScreen = () => {
+  const route = useRoute();
   const navigation = useNavigation();
   const [essencesData, setEssencesData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [followerCount, setFollowerCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
+  const userId = route.params.userId;
   const [username, setUsername] = useState('');
   const [profilePic, setProfilePic] = useState(null); 
+  const [followedUserIds, setFollowedUserIds] = useState([]);
 
   useEffect(() => {
-    const userId = auth.currentUser?.uid;
+    const fetchFollowing = async () => {
+      if (userId) {
+        const followingRef = collection(db, 'users', userId, 'following');
+        const snapshot = await getDocs(followingRef);
+        const followingIds = snapshot.docs.map(doc => doc.id);
+        setFollowedUserIds(followingIds);
+      }
+    };
+
+    fetchFollowing();
+  }, [userId]);
+
+  useEffect(() => {
+    // const userId = auth.currentUser?.uid;
     const q = query(
       collection(db, `users/${userId}/essences`),
       orderBy("createdAt", "desc")
@@ -52,10 +69,10 @@ const HomeScreen = () => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
-    const userId = auth.currentUser?.uid;
+    // const userId = auth.currentUser?.uid;
     if (!userId) return;
   
     const fetchCounts = async () => {
@@ -66,28 +83,26 @@ const HomeScreen = () => {
     };
   
     fetchCounts();
-  }, [auth.currentUser]);
+  }, [userId, followedUserIds]);
 
   useFocusEffect(
     React.useCallback(() => {
       const fetchFollowingCountOnFocus = async () => {
-        const currentUserId = auth.currentUser?.uid;
-        if (currentUserId) {
-          const updatedFollowingCount = await fetchFollowingCount(currentUserId);
+        if (userId) {
+          const updatedFollowingCount = await fetchFollowingCount(userId);
           setFollowingCount(updatedFollowingCount);
         }
       };
   
       fetchFollowingCountOnFocus();
-    }, [])
+    }, [userId, followedUserIds])
   );
 
   useEffect(() => {
     const fetchUsername = async () => {
-      const currentUserId = auth.currentUser?.uid;
-      if (currentUserId) {
+      if (userId) {
         try {
-          const userDoc = await getDoc(doc(db, "users", currentUserId));
+          const userDoc = await getDoc(doc(db, "users", userId));
           if (userDoc.exists()) {
             setUsername(userDoc.data().username);
           }
@@ -98,7 +113,7 @@ const HomeScreen = () => {
     };
   
     fetchUsername();
-  }, []);
+  }, [userId]);
 
   const handleSignOut = () => {
     auth
@@ -108,6 +123,17 @@ const HomeScreen = () => {
       })
       .catch((error) => alert(error.message));
   };
+
+  const handleFollowUnfollow = async (userId, isFollowing) => {
+    if (isFollowing) {
+      await unfollowUser(auth.currentUser.uid, userId);
+      setFollowedUserIds(followedUserIds.filter(id => id !== userId));
+    } else {
+      await followUser(auth.currentUser.uid, userId);
+      setFollowedUserIds([...followedUserIds, userId]);
+    }
+  };
+
 
   const EssenceItem = ({ prompt, response }) => (
     <TouchableOpacity style={styles.essenceItem}>
@@ -122,10 +148,9 @@ const HomeScreen = () => {
 
   useEffect(() => {
     const fetchProfilePic = async () => {
-      const currentUserId = auth.currentUser?.uid;
-      if (currentUserId) {
+      if (userId) {
         try {
-          const userDocRef = doc(db, "users", currentUserId);
+          const userDocRef = doc(db, "users", userId);
           const userDocSnapshot = await getDoc(userDocRef);
   
           if (userDocSnapshot.exists()) {
@@ -147,7 +172,7 @@ const HomeScreen = () => {
     };
   
     fetchProfilePic();
-  }, []);
+  }, [userId]);
   
   const handleProfilePictureSelect = async () => {
     try {
@@ -170,11 +195,10 @@ const HomeScreen = () => {
       if (!pickerResult.cancelled) {
         const uri = pickerResult.assets[0].uri;
 
-        const currentUserId = auth.currentUser?.uid;
         
-        if (currentUserId) {
+        if (userId) {
           try {
-            const userDocRef = doc(db, "users", currentUserId);
+            const userDocRef = doc(db, "users", userId);
             await updateDoc(userDocRef, { profilePicUrl: uri });
             setProfilePic(uri);
           } catch (error) {
@@ -194,12 +218,7 @@ const HomeScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={handleProfilePictureSelect}>
-        <Image   source={profilePic ? { uri: profilePic } : require("./../assets/profile-pic.jpg")}
- style={styles.profilePicture} />
-
-       
-        </TouchableOpacity>
+        <Image   source={profilePic ? { uri: profilePic } : require("./../assets/profile-pic.jpg")} style={styles.profilePicture} />
         <View style={styles.userInfo}>
           <Text style={styles.greeting}>Welcome, {username || auth.currentUser?.email}</Text>
           <Text style={styles.userBio}>Share and discover the small joys in life.</Text>
@@ -207,19 +226,33 @@ const HomeScreen = () => {
       </View>
   
       <View style={styles.statsContainer}>
-        <TouchableOpacity onPress={() => navigation.navigate('Followers', {userId: auth.currentUser?.uid})} style={styles.statsBox}>
+        <TouchableOpacity onPress={() => navigation.navigate('Followers', {userId: userId})} style={styles.statsBox}>
           <Text style={styles.statsCount}>{followerCount}</Text>
           <Text style={styles.statsLabel}>Followers</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('Following', {userId: auth.currentUser?.uid})} style={styles.statsBox}>
+        <TouchableOpacity onPress={() => navigation.navigate('Following', {userId: userId})} style={styles.statsBox}>
           <Text style={styles.statsCount}>{followingCount}</Text>
           <Text style={styles.statsLabel}>Following</Text>
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
-        <Text style={styles.signOutButtonText}>Sign Out</Text>
-      </TouchableOpacity>
+      {userId == auth.currentUser?.uid ? (
+        <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
+          <Text style={styles.signOutButtonText}>Sign Out</Text>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity
+          style={[
+            styles.button,
+            followedUserIds.includes(userId) ? styles.unfollowButton : styles.followButton,
+          ]}
+          onPress={() => handleFollowUnfollow(userId, followedUserIds.includes(userId))}
+        >
+          <Text style={styles.buttonText}>
+            {followedUserIds.includes(userId) ? 'Unfollow' : 'Follow'}
+          </Text>
+        </TouchableOpacity>
+      )}
   
       <View style={styles.separator}></View>
   
@@ -240,6 +273,8 @@ const HomeScreen = () => {
           contentContainerStyle={styles.essencesGrid}
         />
       )}
+
+      
 
     </View>
   );
@@ -352,7 +387,27 @@ const styles = StyleSheet.create({
       color: '#666',
       marginTop: 5,
     },
+    button: {
+      paddingHorizontal: 20,
+      paddingVertical: 8,
+      borderRadius: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    followButton: {
+      marginRight: 0,
+      backgroundColor: "#1E88E5", // Follow button with blue background
+    },
+    unfollowButton: {
+      backgroundColor: "#E53935", // Unfollow button with darker red background
+    },
+    buttonText: {
+      color: 'white',
+      fontSize: 14,
+      fontWeight: 'bold',
+    },
+  
   });
   
-  export default HomeScreen;
+  export default ProfileScreen;
   

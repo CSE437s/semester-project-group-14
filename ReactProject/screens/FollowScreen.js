@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Image, View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { db, auth } from '../firebaseConfig';
+import { useNavigation } from "@react-navigation/core";
 import { collection, query, doc,getDoc, where, getDocs } from 'firebase/firestore';
 import { followUser, unfollowUser } from '../services/UserService';
 
 const FollowScreen = () => {
+  const navigation = useNavigation();
   const [searchTerm, setSearchTerm] = useState('');
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -97,22 +99,24 @@ const FollowScreen = () => {
           data={users}
           keyExtractor={item => item.id}
           renderItem={({ item }) => (
-            <View style={styles.userItem}>
-              <Image
-                source={item.profilePicUrl ? { uri: item.profilePicUrl } : require("./../assets/profile-pic.jpg")}
-                style={styles.avatar}
-              />
-              <Text style={styles.username}>{item.username}</Text>
-              <TouchableOpacity
-                style={[
-                  styles.button,
-                  followedUserIds.includes(item.id) ? styles.unfollowButton : styles.followButton,
-                ]}
-                onPress={() => handleFollowUnfollow(item.id, followedUserIds.includes(item.id))}
-              >
-                <Text style={styles.buttonText}>
-                  {followedUserIds.includes(item.id) ? 'Unfollow' : 'Follow'}
-                </Text>
+            <View style={styles}>
+              <TouchableOpacity onPress={() => navigation.navigate('Profile', { userId: item.id })} style={styles.userItem}>
+                <Image
+                  source={item.profilePicUrl ? { uri: item.profilePicUrl } : require("./../assets/profile-pic.jpg")}
+                  style={styles.avatar}
+                />
+                <Text style={styles.username}>{item.username}</Text>
+                <TouchableOpacity
+                  style={[
+                    styles.button,
+                    followedUserIds.includes(item.id) ? styles.unfollowButton : styles.followButton,
+                  ]}
+                  onPress={() => handleFollowUnfollow(item.id, followedUserIds.includes(item.id))}
+                >
+                  <Text style={styles.buttonText}>
+                    {followedUserIds.includes(item.id) ? 'Unfollow' : 'Follow'}
+                  </Text>
+                </TouchableOpacity>
               </TouchableOpacity>
             </View>
           )}

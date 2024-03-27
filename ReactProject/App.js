@@ -15,6 +15,7 @@ import FollowingScreen from "./screens/FollowingScreen";
 import { db, auth } from "./firebaseConfig";
 import { collection,addDoc, deleteDoc,getDocs } from "firebase/firestore";
 import PromptContext from "./contexts/PromptContext";
+import ProfileScreen from "./screens/ProfileScreen";
 
 
 // const PromptContext = createContext();
@@ -106,6 +107,7 @@ useEffect(() => {
                 <Stack.Screen name="Follow" component={FollowScreen} />
                 <Stack.Screen name="Followers" component={FollowersScreen} />
                 <Stack.Screen name="Following" component={FollowingScreen} />
+                <Stack.Screen name="Profile" component={ProfileScreen} />
                 {/* would put screens that user is required to be logged in to see here */}
               </>
             ) : (
