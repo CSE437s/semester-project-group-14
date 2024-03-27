@@ -36,50 +36,61 @@ useEffect(() => {
     let isMounted = true;
 
     const getTopVotedPrompt = async () => {
-        const promptsRef = collection(db, "potentialPrompts");
-        const promptSnapshot = await getDocs(promptsRef);
-        let topPrompt = null;
-        let maxVotes = -Infinity;
-
-        promptSnapshot.forEach((doc) => {
-            const data = doc.data();
-            const netVotes = data.upvotes - data.downvotes;
-
-            if (netVotes > maxVotes) {
-                maxVotes = netVotes;
-                topPrompt = data.Description;
-            }
-        });
-
-        if (isMounted && topPrompt) {
-            setPrompt(topPrompt);
-            promptSnapshot.forEach(async (doc) => {
-                await deleteDoc(doc.ref);
-            });
-            const promptsCollectionRef = collection(db, "prompts");
-            const promptsSnapshot = await getDocs(promptsCollectionRef);
-
-            promptsSnapshot.forEach(async (doc) => {
-                await deleteDoc(doc.ref);
-            });
-            console.log(topPrompt);
-          await addDoc(collection(db, "prompts"),{ question: topPrompt });
-
-
+      const promptsRef = collection(db, "potentialPrompts");
+      const promptSnapshot = await getDocs(promptsRef);
+  
+      if (promptSnapshot.empty) {
+        const promptsCollectionRef = collection(db, "prompts");
+        const promptsSnapshot = await getDocs(promptsCollectionRef);
+        if (!promptsSnapshot.empty) {
+            setPrompt(promptsSnapshot.docs[0].data().question);
+        } else {
+            console.error("No prompts found in the database.");
         }
-    };
+    }
+  
+      let topPrompt = null;
+      let maxVotes = -Infinity;
+  
+      promptSnapshot.forEach((doc) => {
+          const data = doc.data();
+          const netVotes = data.upvotes - data.downvotes;
+  
+          if (netVotes > maxVotes) {
+              maxVotes = netVotes;
+              topPrompt = data.Description;
+          }
+      });
+  
+      if (isMounted && topPrompt) {
+          setPrompt(topPrompt);
+          promptSnapshot.forEach(async (doc) => {
+              await deleteDoc(doc.ref);
+          });
+          const promptsCollectionRef = collection(db, "prompts");
+          const promptsSnapshot = await getDocs(promptsCollectionRef);
+  
+          promptsSnapshot.forEach(async (doc) => {
+              await deleteDoc(doc.ref);
+          });
+          console.log(topPrompt);
+          await addDoc(collection(db, "prompts"), { question: topPrompt });
+      }
+  };
+  
 
     getTopVotedPrompt();
 
     const interval = setInterval(() => {
         getTopVotedPrompt();
-    },  6000000);
+    },  600);
 
     return () => {
         isMounted = false;
         clearInterval(interval);
     };
 }, []);
+
 
   
 
