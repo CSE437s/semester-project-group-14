@@ -285,10 +285,11 @@ export default function FeedScreen() {
     return (
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <Image source={item.profilePicUrl ? { uri: item.profilePicUrl } : require("./../assets/profile-pic.jpg")} style={styles.avatar} />
+          <TouchableOpacity onPress={() => navigation.navigate('Profile', { userId: item.userId })} style={styles.cardHeader}>
+            <Image source={item.profilePicUrl ? { uri: item.profilePicUrl } : require("./../assets/profile-pic.jpg")} style={styles.avatar} />
+            <Text style={styles.username}>{item.username}</Text>
+          </TouchableOpacity>
           <View style={styles.timestampContainer}>
-            
-          <Text style={styles.username}>{item.username}</Text>
             <Text style={styles.timestamp}>{timeAgo}</Text> 
           </View>
         </View>
