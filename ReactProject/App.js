@@ -13,7 +13,7 @@ import FollowScreen from "./screens/FollowScreen";
 import FollowersScreen from "./screens/FollowersScreen";
 import FollowingScreen from "./screens/FollowingScreen";
 import { db, auth } from "./firebaseConfig";
-import { collection, deleteDoc,getDocs } from "firebase/firestore";
+import { collection,addDoc, deleteDoc,getDocs } from "firebase/firestore";
 import PromptContext from "./contexts/PromptContext";
 
 
@@ -56,6 +56,16 @@ useEffect(() => {
             promptSnapshot.forEach(async (doc) => {
                 await deleteDoc(doc.ref);
             });
+            const promptsCollectionRef = collection(db, "prompts");
+            const promptsSnapshot = await getDocs(promptsCollectionRef);
+
+            promptsSnapshot.forEach(async (doc) => {
+                await deleteDoc(doc.ref);
+            });
+            console.log(topPrompt);
+          await addDoc(collection(db, "prompts"),{ question: topPrompt });
+
+
         }
     };
 
@@ -63,7 +73,7 @@ useEffect(() => {
 
     const interval = setInterval(() => {
         getTopVotedPrompt();
-    },  604800000);
+    },  6000000);
 
     return () => {
         isMounted = false;
