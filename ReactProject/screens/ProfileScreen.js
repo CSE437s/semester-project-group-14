@@ -44,15 +44,16 @@ const ProfileScreen = () => {
   useEffect(() => {
     const fetchFollowing = async () => {
       if (userId) {
-        const followingRef = collection(db, 'users', userId, 'followers');
+        const followingRef = collection(db, 'users', auth.currentUser.uid, 'following');
         const snapshot = await getDocs(followingRef);
         const followingIds = snapshot.docs.map(doc => doc.id);
         setFollowedUserIds(followingIds);
       }
     };
-
+  
     fetchFollowing();
-  }, [userId]);
+  }, []); 
+  
 
   useEffect(() => {
     // const userId = auth.currentUser?.uid;

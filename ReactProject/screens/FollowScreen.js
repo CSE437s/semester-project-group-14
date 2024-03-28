@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Image, View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { db, auth } from '../firebaseConfig';
-import { useNavigation } from "@react-navigation/core";
+import { useNavigation,useIsFocused } from "@react-navigation/core";
 import { collection, query, doc,getDoc, where, getDocs } from 'firebase/firestore';
 import { followUser, unfollowUser } from '../services/UserService';
 
@@ -10,6 +10,7 @@ const FollowScreen = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
+  const isFocused = useIsFocused();
   const [followedUserIds, setFollowedUserIds] = useState([]);
 
   useEffect(() => {
@@ -24,7 +25,7 @@ const FollowScreen = () => {
     };
 
     fetchFollowing();
-  }, []);
+  }, [isFocused]);
 
   useEffect(() => {
     if (!searchTerm.trim()) {
