@@ -3,7 +3,7 @@ import { StyleSheet, View, ActivityIndicator, Text, Image, FlatList, Modal, Text
 import { Card, Button } from "tamagui";
 import PromptContext from "../contexts/PromptContext";
 import { getDocs, deleteDoc, addDoc, query, collectionGroup, where, doc, getDoc, collection,onSnapshot, ref, uploadBytes, getDownloadURL } from "firebase/firestore";
-import { db, auth, storage } from "../firebaseConfig"; // Assuming you have a Firebase storage reference
+import { db, auth, storage } from "../firebaseConfig"; 
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView, SafeAreaProvider, useSafeAreaInsets, } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
@@ -18,7 +18,7 @@ export default function FeedScreen() {
   const [feedData, setFeedData] = useState([]);
   const [followers, setFollowers] = useState([]);
   const [userResponse, setUserResponse] = useState(null);
-  const [prompt, setPrompt, isPromptAnswered, setIsPromptAnswered] = useContext(PromptContext); // Destructuring context values
+  const [prompt, setPrompt, isPromptAnswered, setIsPromptAnswered] = useContext(PromptContext);
   const [newEssence, setNewEssence] = useState("");
   const [showComments, setShowComments] = useState({});
   const [commentText, setCommentText] = useState({});
@@ -60,7 +60,7 @@ export default function FeedScreen() {
     
               const liked = !querySnapshot.empty;
     
-              let username = "USER"; // Default username
+              let username = "USER";
               let profilePicUrl = ""; 
               if (essenceData.userId) {
                 const userDocRef = doc(db, "users", essenceData.userId);
@@ -116,7 +116,6 @@ export default function FeedScreen() {
   }, [prompt]);
 
 
-  //FOR PROMPT HANDLING
   useEffect(() => {
     const fetchPromptAndCheckResponse = async () => {
       const checkResponse = async () => {
@@ -130,7 +129,7 @@ export default function FeedScreen() {
           setIsPromptAnswered(true);
         } else {
           setIsPromptAnswered(false);
-          setUserResponse(null); // Reset user response if they haven't responded
+          setUserResponse(null);
         }
       };
       checkResponse();
@@ -275,10 +274,8 @@ export default function FeedScreen() {
   
         console.log("Comment added");
         fetchCommentsForEssence(essenceId);
-        // Reset the comment input field
         setCommentText(prevState => ({ ...prevState, [essenceId]: '' }));
   
-        // Refresh comments to show the newly added one
         fetchCommentsForEssence(essenceId, postUserId);
       } catch (error) {
         console.error("Error adding comment: ", error);
@@ -297,11 +294,10 @@ export default function FeedScreen() {
       const commentsList = [];
       for (const docSnapshot of commentsSnapshot.docs) {
         const commentData = docSnapshot.data();
-        // Ensure the 'doc' function is correctly imported and used here
         const userDocRef = doc(db, "users", commentData.userId);
         const userSnapshot = await getDoc(userDocRef);
         const username = userSnapshot.exists() ? userSnapshot.data().username : "Unknown";
-        commentsList.push({ ...commentData, username }); // Include username in the comment data
+        commentsList.push({ ...commentData, username });
       }
       setComments(prev => ({ ...prev, [essenceId]: commentsList }));
     } catch (error) {
@@ -325,7 +321,7 @@ export default function FeedScreen() {
           </View>
         </View>
         
-        {item.imageUri && // Check if imageUri exists
+        {item.imageUri && 
         <Image  style={styles.essenceImage} source={{ uri: item.imageUri }}></Image>
       }
 
