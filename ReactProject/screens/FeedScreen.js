@@ -2,13 +2,14 @@ import React, { useContext, useState, useEffect } from "react";
 import { StyleSheet, View, ActivityIndicator, Text, Image, FlatList, Modal, TextInput, TouchableOpacity, } from "react-native";
 import { Card, Button } from "tamagui";
 import PromptContext from "../contexts/PromptContext";
-import { getDocs, deleteDoc, addDoc, query, collectionGroup, where, doc, getDoc, collection,onSnapshot } from "firebase/firestore";
-import { db, auth } from "../firebaseConfig";
+import { getDocs, deleteDoc, addDoc, query, collectionGroup, where, doc, getDoc, collection,onSnapshot, ref, uploadBytes, getDownloadURL } from "firebase/firestore";
+import { db, auth, storage } from "../firebaseConfig"; 
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView, SafeAreaProvider, useSafeAreaInsets, } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-
+import moment from 'moment';
+import * as ImagePicker from 'expo-image-picker';
 
 
 export default function FeedScreen() {
@@ -17,11 +18,13 @@ export default function FeedScreen() {
   const [feedData, setFeedData] = useState([]);
   const [followers, setFollowers] = useState([]);
   const [userResponse, setUserResponse] = useState(null);
-  const [prompt, setPrompt, isPromptAnswered, setIsPromptAnswered] = useContext(PromptContext); // Destructuring context values
+  const [prompt, setPrompt, isPromptAnswered, setIsPromptAnswered] = useContext(PromptContext);
   const [newEssence, setNewEssence] = useState("");
   const [showComments, setShowComments] = useState({});
   const [commentText, setCommentText] = useState({});
   const [comments, setComments] = useState({});
+  const [pickedImage, setPickedImage] = useState(null);
+
 
   
 
@@ -57,7 +60,7 @@ export default function FeedScreen() {
     
               const liked = !querySnapshot.empty;
     
-              let username = "USER"; // Default username
+              let username = "USER";
               let profilePicUrl = ""; 
               if (essenceData.userId) {
                 const userDocRef = doc(db, "users", essenceData.userId);
@@ -86,6 +89,9 @@ export default function FeedScreen() {
     
             const essencesWithData = await Promise.all(essencesDataPromises);
             const filteredEssences = essencesWithData.filter(essence => essence !== null);
+    
+            filteredEssences.sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate());
+    
             setFeedData(filteredEssences);
           });
     
@@ -104,12 +110,12 @@ export default function FeedScreen() {
       }
     };
     
+    
   
     fetchData();
   }, [prompt]);
 
 
-  //FOR PROMPT HANDLING
   useEffect(() => {
     const fetchPromptAndCheckResponse = async () => {
       const checkResponse = async () => {
@@ -123,7 +129,7 @@ export default function FeedScreen() {
           setIsPromptAnswered(true);
         } else {
           setIsPromptAnswered(false);
-          setUserResponse(null); // Reset user response if they haven't responded
+          setUserResponse(null);
         }
       };
       checkResponse();
@@ -137,37 +143,65 @@ export default function FeedScreen() {
     if (newEssence.trim() === "") {
       return;
     }
-
-    const userId = auth.currentUser?.uid;
-    const essencesRef = collection(db, `users/${userId}/essences`);
-    const querySnapshot = await getDocs(
-      query(essencesRef, where("prompt", "==", prompt))
-    );
-    if (!querySnapshot.empty) {
-      alert("You have already responded to this prompt.");
-      return;
+  
+    let imageUri = ''; 
+  
+    if (pickedImage) {
+      imageUri =pickedImage;
     }
-
+  
+    const userId = auth.currentUser?.uid;
     const essenceData = {
       prompt: prompt,
       response: newEssence,
       createdAt: new Date(),
       userId: userId,
+      imageUri: imageUri,
     };
-
+  
     addDoc(collection(db, `users/${userId}/essences`), essenceData)
       .then(() => {
         setNewEssence("");
-        setUserResponse(newEssence); // Update userResponse state with the new response
+        setUserResponse(newEssence); 
         setIsPromptAnswered(true);
       })
       .catch((error) => {
         console.error("Error adding essence: ", error);
         alert("An error occurred while adding essence. Please try again.");
       });
-      
   };
+  
+  const handleImageSelection = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permissionResult.granted) {
+        Alert.alert(
+          'Permission Denied',
+          'Please enable permissions to access the camera roll to select a profile picture.'
+        );
+        return;
+      }
+  
+      const pickerResult = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 1,
+      });
+  
+      if (!pickerResult.cancelled) {
+        const uri = pickerResult.assets[0].uri;
+        setPickedImage(uri);
+         
+      
+      }
+    } catch (error) {
+      console.error("Error selecting profile picture:", error);
+    }
 
+  };
+  
+  
   const handleLike = async (essenceId, postUserId) => {
     const userId = auth.currentUser?.uid;
     const likesRef = collection(db, `users/${postUserId}/essences/${essenceId}/likes`);
@@ -240,10 +274,8 @@ export default function FeedScreen() {
   
         console.log("Comment added");
         fetchCommentsForEssence(essenceId);
-        // Reset the comment input field
         setCommentText(prevState => ({ ...prevState, [essenceId]: '' }));
   
-        // Refresh comments to show the newly added one
         fetchCommentsForEssence(essenceId, postUserId);
       } catch (error) {
         console.error("Error adding comment: ", error);
@@ -262,11 +294,10 @@ export default function FeedScreen() {
       const commentsList = [];
       for (const docSnapshot of commentsSnapshot.docs) {
         const commentData = docSnapshot.data();
-        // Ensure the 'doc' function is correctly imported and used here
         const userDocRef = doc(db, "users", commentData.userId);
         const userSnapshot = await getDoc(userDocRef);
         const username = userSnapshot.exists() ? userSnapshot.data().username : "Unknown";
-        commentsList.push({ ...commentData, username }); // Include username in the comment data
+        commentsList.push({ ...commentData, username });
       }
       setComments(prev => ({ ...prev, [essenceId]: commentsList }));
     } catch (error) {
@@ -275,56 +306,67 @@ export default function FeedScreen() {
   };
   
   
-  
-  
-  
-  
-
-  const renderItem = ({ item }) => (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <Image source={item.profilePicUrl ? { uri: item.profilePicUrl } : require("./../assets/profile-pic.jpg")} style={styles.avatar} />
-        <Text style={styles.username}>{item.username}</Text>
-      </View>
-      <Text style={styles.response}>{item.response}</Text>
-      <View style={styles.interactionBar}>
-        {/* Like button */}
-        <TouchableOpacity onPress={() => handleLike(item.id, item.userId)} style={styles.likeButton}>
-          <Ionicons name={item.liked ? 'heart' : 'heart-outline'} size={20} color={item.liked ? "#3B82F6" : "#3B82F6"} />
-          <Text style={styles.likeCount}>{item.numLikes}</Text>
-        </TouchableOpacity>
-        
-        {/* Comments button */}
-        <TouchableOpacity onPress={() => toggleCommentsVisibility(item.id, item.userId)} style={styles.commentButton}>
-          <Ionicons name="chatbubble-outline" size={20} color="#3B82F6" />
-          <Text style={styles.likeCount}>{item.numComments}</Text>
-        </TouchableOpacity>
-      </View>
-  
-      {showComments[item.id] && (
-        <View style={styles.commentsSection}>
-          <View style={styles.commentInputContainer}>
-            <TextInput
-              style={styles.commentInput}
-              value={commentText[item.id] || ''}
-              onChangeText={(text) => setCommentText(prev => ({ ...prev, [item.id]: text }))}
-              placeholder="Write a comment..."
-            />
-            <TouchableOpacity onPress={() => handlePostComment(item.id, item.userId)} style={styles.postCommentButton}>
-              <Text style={styles.postCommentButtonText}>Post</Text>
-            </TouchableOpacity>
+  const renderItem = ({ item }) => {
+    const timeAgo = moment(item.createdAt.toDate()).fromNow();
+    console.log("Image URI:", item.imageUri); 
+    return (
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <TouchableOpacity onPress={() => navigation.navigate('Profile', { userId: item.userId })} style={styles.cardHeader}>
+            <Image source={item.profilePicUrl ? { uri: item.profilePicUrl } : require("./../assets/profile-pic.jpg")} style={styles.avatar} />
+            <Text style={styles.username}>{item.username}</Text>
+          </TouchableOpacity>
+          <View style={styles.timestampContainer}>
+            <Text style={styles.timestamp}>{timeAgo}</Text> 
           </View>
-          {comments[item.id] && comments[item.id].map((comment, index) => (
-            <View key={index} style={styles.comment}>
-              <Text style={styles.commentUsername}>{comment.username}</Text>
-              <Text style={styles.commentText}>{comment.text}</Text>
-            </View>
-          ))}
         </View>
-      )}
+        
+        {item.imageUri && 
+        <Image  style={styles.essenceImage} source={{ uri: item.imageUri }}></Image>
+      }
 
-    </View>
-  );
+        <Text style={styles.response}>{item.response}</Text>
+        <View style={styles.interactionBar}>
+          <TouchableOpacity onPress={() => handleLike(item.id, item.userId)} style={styles.likeButton}>
+            <Ionicons name={item.liked ? 'heart' : 'heart-outline'} size={20} color={item.liked ? "#3B82F6" : "#3B82F6"} />
+            <Text style={styles.likeCount}>{item.numLikes}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => toggleCommentsVisibility(item.id, item.userId)} style={styles.commentButton}>
+            <Ionicons name="chatbubble-outline" size={20} color="#3B82F6" />
+            <Text style={styles.likeCount}>{item.numComments}</Text>
+          </TouchableOpacity>
+        </View>
+        {showComments[item.id] && (
+          <View style={styles.commentsSection}>
+            <View style={styles.commentInputContainer}>
+              <TextInput
+                style={styles.commentInput}
+                value={commentText[item.id] || ''}
+                onChangeText={(text) => setCommentText(prev => ({ ...prev, [item.id]: text }))}
+                placeholder="Write a comment..."
+              />
+              <TouchableOpacity onPress={() => handlePostComment(item.id, item.userId)} style={styles.postCommentButton}>
+                <Text style={styles.postCommentButtonText}>Post</Text>
+              </TouchableOpacity>
+            </View>
+            {comments[item.id] && comments[item.id].map((comment, index) => (
+              <View key={index} style={styles.comment}>
+                <View style={styles.timestampContainer}>
+                <Text style={styles.commentUsername}>{comment.username}</Text>
+                 <Text style={styles.timestamp}>{moment(comment.createdAt.toDate()).fromNow()}</Text> 
+              </View>
+                <Text style={styles.commentText}>{comment.text}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+    );
+  };
+  
+
+  
+  
   
   
 
@@ -344,21 +386,26 @@ export default function FeedScreen() {
         />
       )}
       {!isPromptAnswered && <BlurView style={styles.overlay} intensity={10}>
-        <View style={styles.popup}>
-        <Text styles={styles.popupPrompt}>{prompt}</Text>
+<View style={styles.popup}>
+  <Text styles={styles.popupPrompt}>{prompt}</Text>
 
-        <TextInput
-        autoCapitalize="none"
-          style={styles.responseInput}
-          value={newEssence}
-          onChangeText={setNewEssence}
-          placeholder="Your response"
-        />
+  <TextInput
+    autoCapitalize="none"
+    style={styles.responseInput}
+    value={newEssence}
+    onChangeText={setNewEssence}
+    placeholder="Your response"
+  />
 
-        <TouchableOpacity onPress={handleAddEssence} style={styles.popupButton}>
-          <Text style={styles.buttonText}>Add</Text>
-        </TouchableOpacity>
-        </View>
+  <TouchableOpacity onPress={handleImageSelection} style={styles.popupButton}>
+    <Ionicons name="image" size={24} color="white" />
+  </TouchableOpacity>
+
+  <TouchableOpacity onPress={handleAddEssence} style={styles.popupButton}>
+    <Text style={styles.buttonText}>Add Essence</Text>
+  </TouchableOpacity>
+</View>
+
       </BlurView>}
     </View>
   );  
@@ -384,6 +431,7 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: "row",
     alignItems: "center",
+    textAlignVertical:'center',
     marginBottom: 8,
   },
   avatar: {
@@ -392,6 +440,13 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginRight: 8,
   },
+  essenceImage: {
+    width: 80,
+    height: 80,
+    alignSelf: 'center', 
+    marginBottom: 10, 
+  },
+  
   username: {
     fontWeight: "bold",
     fontSize: 16,
@@ -411,6 +466,7 @@ const styles = StyleSheet.create({
   modalBox: {
     backgroundColor: "green",
   },
+  
   modalContainer: {
     flex: 1,
     justifyContent: "center",
@@ -443,9 +499,10 @@ const styles = StyleSheet.create({
   popupButton: {
     backgroundColor: "#3B82F6",
     width: "100%",
-    paddingVertical: 15,
+    paddingVertical: 5,
     borderRadius: 10,
     alignItems: "center",
+    marginBottom: 10,
   },
   buttonText: {
     color: "white",
@@ -531,10 +588,6 @@ const styles = StyleSheet.create({
   commentText: {
     fontSize: 14,
     color: '#333',
-  },
-  commentText: {
-    fontSize: 14,
-    color: '#333',
     marginTop: 2,
   },
   commentInputContainer: {
@@ -542,4 +595,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
+  timestampContainer: {
+    flex: 1,
+    alignItems: 'flex-end',
+    flexDirection: 'row',
+
+    
+  },
+  timestamp: {
+    color: '#999',
+    marginLeft: 'auto',
+
+  },
+  commentTimestamp: {
+    fontSize: 12,
+    color: "#999",
+    marginBottom: 2,
+  },
+  
+  
 });

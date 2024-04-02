@@ -13,8 +13,9 @@ import FollowScreen from "./screens/FollowScreen";
 import FollowersScreen from "./screens/FollowersScreen";
 import FollowingScreen from "./screens/FollowingScreen";
 import { db, auth } from "./firebaseConfig";
-import { collection, getDocs } from "firebase/firestore";
+import { collection,addDoc, deleteDoc,getDocs } from "firebase/firestore";
 import PromptContext from "./contexts/PromptContext";
+import ProfileScreen from "./screens/ProfileScreen";
 
 
 // const PromptContext = createContext();
@@ -32,26 +33,67 @@ export default function App() {
 
     return unsubscribe;
   }, []);
-  useEffect(() => {
-    const getRandomPrompt = async () => {
-      const promptsRef = collection(db, "prompts");
-      const promptSnapshot = await getDocs(promptsRef);
-      const promptList = [];
-      promptSnapshot.forEach((doc) => {
-        promptList.push(doc.data().question);
-      });
-      const randomIndex = Math.floor(Math.random() * promptList.length);
-      setPrompt(promptList[randomIndex]);
-    };
+useEffect(() => {
+    let isMounted = true;
 
-    getRandomPrompt();
+    const getTopVotedPrompt = async () => {
+      const promptsRef = collection(db, "potentialPrompts");
+      const promptSnapshot = await getDocs(promptsRef);
+  
+      if (promptSnapshot.empty) {
+        const promptsCollectionRef = collection(db, "prompts");
+        const promptsSnapshot = await getDocs(promptsCollectionRef);
+        if (!promptsSnapshot.empty) {
+            setPrompt(promptsSnapshot.docs[0].data().question);
+        } else {
+            console.error("No prompts found in the database.");
+        }
+    }
+  
+      let topPrompt = null;
+      let maxVotes = -Infinity;
+  
+      promptSnapshot.forEach((doc) => {
+          const data = doc.data();
+          const netVotes = data.upvotes - data.downvotes;
+  
+          if (netVotes > maxVotes) {
+              maxVotes = netVotes;
+              topPrompt = data.Description;
+          }
+      });
+  
+      if (isMounted && topPrompt) {
+          setPrompt(topPrompt);
+          promptSnapshot.forEach(async (doc) => {
+              await deleteDoc(doc.ref);
+          });
+          const promptsCollectionRef = collection(db, "prompts");
+          const promptsSnapshot = await getDocs(promptsCollectionRef);
+  
+          promptsSnapshot.forEach(async (doc) => {
+              await deleteDoc(doc.ref);
+          });
+          console.log(topPrompt);
+          await addDoc(collection(db, "prompts"), { question: topPrompt });
+      }
+  };
+  
+
+    getTopVotedPrompt();
 
     const interval = setInterval(() => {
-      getRandomPrompt();
-    }, 604800000);
+        getTopVotedPrompt();
+    },  600);
 
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+        isMounted = false;
+        clearInterval(interval);
+    };
+}, []);
+
+
+  
 
   return (
     <PromptContext.Provider value={ [prompt, setPrompt, isPromptAnswered, setIsPromptAnswered] }>
@@ -65,6 +107,7 @@ export default function App() {
                 <Stack.Screen name="Follow" component={FollowScreen} />
                 <Stack.Screen name="Followers" component={FollowersScreen} />
                 <Stack.Screen name="Following" component={FollowingScreen} />
+                <Stack.Screen name="Profile" component={ProfileScreen} />
                 {/* would put screens that user is required to be logged in to see here */}
               </>
             ) : (

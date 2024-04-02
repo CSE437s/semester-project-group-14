@@ -1,20 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, Image } from 'react-native';
+import { TouchableOpacity, View, Text, FlatList, StyleSheet, Image } from 'react-native';
 import { db, auth } from "../firebaseConfig";
 import { collection, getDocs, doc, getDoc } from "firebase/firestore";
+import { useRoute} from '@react-navigation/native';
+import { useNavigation } from "@react-navigation/core";
+
 
 const FollowingScreen = () => {
+  const navigation = useNavigation();
+  const userId = useRoute().params.userId;
   const [following, setFollowing] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchFollowing = async () => {
-      const currentUserId = auth.currentUser?.uid;
-      if (!currentUserId) return;
+      if (!userId) return;
 
       setLoading(true);
       try {
-        const followingRef = collection(db, "users", currentUserId, "following");
+        const followingRef = collection(db, "users", userId, "following");
         const snapshot = await getDocs(followingRef);
         const followingListPromises = snapshot.docs.map(async (docRef) => {
           const userDocRef = doc(db, "users", docRef.id);
@@ -36,7 +40,7 @@ const FollowingScreen = () => {
     };
 
     fetchFollowing();
-  }, []);
+  }, [userId]);
 
   return (
     <View style={styles.container}>
@@ -47,12 +51,14 @@ const FollowingScreen = () => {
             data={following}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-                <View style={styles.userItem}>
-                  <Image
-                    source={require("../assets/profile-pic.jpg")} // Use a dynamic source if available
-                    style={styles.avatar}
-                  />
-                  <Text style={styles.username}>{item.username}</Text>
+                <View style={styles}>
+                  <TouchableOpacity onPress={() => navigation.navigate('Profile', { userId: item.id, username: item.username })} style={styles.userItem}>
+                    <Image
+                      source={require("../assets/profile-pic.jpg")} // Use a dynamic source if available
+                      style={styles.avatar}
+                    />
+                    <Text style={styles.username}>{item.username}</Text>
+                  </TouchableOpacity>
                 </View>
             )}
         />
