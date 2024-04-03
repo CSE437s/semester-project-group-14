@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, ScrollView } from "react-native";
 import { db, auth } from "../firebaseConfig";
-import { collection, getDocs, doc, addDoc, updateDoc, increment } from "firebase/firestore";
+import { collection, getDocs, doc, addDoc, updateDoc, onSnapshot, increment } from "firebase/firestore";
 import { Ionicons } from '@expo/vector-icons'; // Import Ionicons
 import PromptContext from "../contexts/PromptContext";
 
@@ -16,21 +16,26 @@ const PromptScreen = ({ navigation }) => {
   useEffect(() => {
     fetchPromptsAndVotes();
   }, []);
+  
+
 
   const fetchPromptsAndVotes = async () => {
     const promptsRef = collection(db, "potentialPrompts");
-    const snapshot = await getDocs(promptsRef);
-    let totalUpvotes = 0;
-    let totalDownvotes = 0;
-    const fetchedPrompts = snapshot.docs.map((doc) => {
-      const promptData = { id: doc.id, ...doc.data() };
-      totalUpvotes += promptData.upvotes.length;
-      totalDownvotes += promptData.downvotes.length;
-      return promptData;
+    const unsubscribe = onSnapshot(promptsRef, (snapshot) => {
+      let totalUpvotes = 0;
+      let totalDownvotes = 0;
+      const fetchedPrompts = snapshot.docs.map((doc) => {
+        const promptData = { id: doc.id, ...doc.data() };
+        totalUpvotes += promptData.upvotes.length;
+        totalDownvotes += promptData.downvotes.length;
+        return promptData;
+      });
+  
+      setPrompts(fetchedPrompts);
+      setTotalVotes({ upvotes: totalUpvotes, downvotes: totalDownvotes });
     });
-
-    setPrompts(fetchedPrompts);
-    setTotalVotes({ upvotes: totalUpvotes, downvotes: totalDownvotes });
+  
+    return unsubscribe; 
   };
   
 
@@ -86,7 +91,7 @@ const PromptScreen = ({ navigation }) => {
   
   useEffect(() => {
     fetchPromptsAndVotes();
-  }, [prompts]);
+  }, []);
   
   
   
