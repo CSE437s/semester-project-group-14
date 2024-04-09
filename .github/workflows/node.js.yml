@@ -27,8 +27,8 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
         cache-dependency-path: '${{ github.workspace }}'
-    - name: Navigate to ReactProject directory
-      run: cd semester-project-group-14/ReactProject
+    - name: check files
+      run: ls -al
     - run: npm install
     - run: npx expo start
     - run: s
