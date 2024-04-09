@@ -26,7 +26,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-        cache-dependency-path: '../../ReactProject'
+        cache-dependency-path: '${{ github.workspace }}/ReactProject'
     - run: npx expo start
     - run: s
     - run: i
