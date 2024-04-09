@@ -32,7 +32,5 @@ jobs:
         cd ReactProject &&
         ls -a &&
         npm ci &&
-        npx expo start &&
-        s &&
-        i
+        npx expo start 
 
