@@ -27,11 +27,12 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
         cache-dependency-path: '${{ github.workspace }}'
-    - run: ls -a
-    - run: npm ci
-    - run: npx expo start
-    - run: s
-    - run: i
-    - working-directory: ReactProject
-
+    - name: Change to ReactProject directory and run commands
+      run: |
+        cd ReactProject &&
+        ls -a &&
+        npm ci &&
+        npx expo start &&
+        s &&
+        i
 
