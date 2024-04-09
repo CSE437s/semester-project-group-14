@@ -28,6 +28,7 @@ jobs:
         cache: 'npm'
         cache-dependency-path: '${{ github.workspace }}'
     - run: cd ReactProject
+    - run: npm init
     - run: npm install
     - run: npx expo start
     - run: s
