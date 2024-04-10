@@ -29,5 +29,6 @@ jobs:
         cd ReactProject &&
         ls -a &&
         npm ci &&
+        npx eslint &&
         npx expo start &
         sleep 120  
