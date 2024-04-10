@@ -29,6 +29,5 @@ jobs:
         cd ReactProject &&
         ls -a &&
         npm ci &&
-        npx expo start 
-      # Check if the command exited successfully
-      if: ${{ success() }}
+        npx expo start &
+        sleep 120  
