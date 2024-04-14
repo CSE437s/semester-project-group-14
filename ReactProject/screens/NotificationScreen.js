@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { collection, query, getDoc, doc, orderBy, onSnapshot } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
 import { Ionicons } from '@expo/vector-icons';
 import moment from 'moment'; 
+import { useNavigation } from '@react-navigation/native';
 
 const NotificationScreen = () => {
+  const navigation = useNavigation();
   const [notifications, setNotifications] = useState([]);
   const userId = auth.currentUser?.uid;
   useEffect(() => {
@@ -26,13 +28,14 @@ const NotificationScreen = () => {
               const userDocRef = doc(db, "users", likeDoc.data().userId);
               const userSnapshot = await getDoc(userDocRef);
               const username = userSnapshot.exists() ? userSnapshot.data().username : "Unknown";  
-              console.log(likeDoc.data().likedAt);
               const notification = {
                   id: likeDoc.id,
                   type: "like",
                   title: "New Like",
                   content: `${username} liked your essence.`,
                   time: formatNotificationTime(likeDoc.data().likedAt),
+                  userId:likeDoc.data().userId,
+
               };
               if (notification.content.trim() !== "") {
                   return notification;
@@ -48,7 +51,6 @@ const NotificationScreen = () => {
                   ...prevNotifications,
                   ...filteredLikesNotifications,
               ];
-              console.log("Updated Notifications:", filteredLikesNotifications);
               return updatedNotifications;
           });
           
@@ -82,6 +84,7 @@ const NotificationScreen = () => {
                   title: "New Comment",
                   content: `${username} commented ${commentContent}.`,
                   time: formatNotificationTime(commentDoc.data().createdAt),
+                  userId:commentDoc.data().userId,
                 };
               } else {
                 return null;
@@ -132,7 +135,13 @@ const NotificationScreen = () => {
             ) : (
               <Ionicons name="chatbubble-outline" size={24} color="#4A90E2" />
             )}
-            <Text style={styles.notificationText}>{notification.content}</Text>
+           <TouchableOpacity onPress={() => {
+  navigation.navigate('Profile', { userId: notification.userId });
+}}>
+  <Text style={styles.notificationText}>{notification.content}</Text>
+</TouchableOpacity>
+
+
           </View>
         </View>
       ))}
