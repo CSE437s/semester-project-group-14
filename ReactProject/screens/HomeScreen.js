@@ -109,13 +109,16 @@ const HomeScreen = () => {
       .catch((error) => alert(error.message));
   };
 
-  const EssenceItem = ({ prompt, response }) => (
-    <TouchableOpacity style={styles.essenceItem}>
-      <Text style={styles.essenceTitle}>{prompt}</Text>
-      <Text style={styles.essenceResponse}>{response}</Text>
-    </TouchableOpacity>
-  );
-
+  const EssenceItem = ({ prompt, response, imageUri }) => {
+    return (
+      <TouchableOpacity style={styles.essenceItem}>
+        <Text style={styles.essenceTitle}>{prompt}</Text>
+        {imageUri && <Image source={{ uri: imageUri }} style={styles.essenceImage} />}
+        <Text style={styles.essenceResponse}>{response}</Text>
+      </TouchableOpacity>
+    );
+  };
+  
   const navigateToPromptScreen = () => {
     navigation.navigate("Prompt");
   };
@@ -231,14 +234,15 @@ const HomeScreen = () => {
         />
       ) : (
         <FlatList
-          data={essencesData}
-          renderItem={({ item }) => (
-            <EssenceItem prompt={item.prompt} response={item.response} />
-          )}
-          keyExtractor={(item) => item.id}
-          numColumns={2}
-          contentContainerStyle={styles.essencesGrid}
-        />
+        data={essencesData}
+        renderItem={({ item }) => (
+          <EssenceItem imageUri={item.imageUri} prompt={item.prompt} response={item.response} />
+        )}
+        keyExtractor={(item) => item.id}
+        numColumns={2}
+        contentContainerStyle={styles.essencesGrid}
+      />
+      
       )}
 
     </View>
@@ -351,6 +355,12 @@ const styles = StyleSheet.create({
       fontSize: 14,
       color: '#666',
       marginTop: 5,
+    },
+    essenceImage: {
+      width: 100,
+      height: 100,
+      marginVertical: 10,
+      borderRadius: 10,
     },
   });
   

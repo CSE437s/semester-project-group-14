@@ -261,6 +261,8 @@ const PromptScreen = ({ navigation }) => {
   <View style={styles.addSubmissionContainer}>
     <Text style={styles.addSubmissionText}>Add a submission for next week's prompt!</Text>
     <TextInput
+                    autoCorrect={false} 
+
       value={newPotentialPrompt}
       onChangeText={setNewPotentialPrompt}
       style={styles.input}
@@ -326,6 +328,8 @@ const PromptScreen = ({ navigation }) => {
       <View style={styles.commentsSection}>
   <View style={styles.commentInputContainer}>
     <TextInput
+                    autoCorrect={false} 
+
       style={styles.commentInput}
       value={commentText[prompt.id] || ''}
       onChangeText={(text) => setCommentText(prev => ({ ...prev, [prompt.id]: text }))}

@@ -340,6 +340,7 @@ export default function FeedScreen() {
           <View style={styles.commentsSection}>
             <View style={styles.commentInputContainer}>
               <TextInput
+                autoCorrect={false} 
                 style={styles.commentInput}
                 value={commentText[item.id] || ''}
                 onChangeText={(text) => setCommentText(prev => ({ ...prev, [item.id]: text }))}
@@ -390,6 +391,7 @@ export default function FeedScreen() {
   <Text styles={styles.popupPrompt}>{prompt}</Text>
 
   <TextInput
+    autoCorrect={false} 
     autoCapitalize="none"
     style={styles.responseInput}
     value={newEssence}
