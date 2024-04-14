@@ -84,7 +84,7 @@ useEffect(() => {
 
     const interval = setInterval(() => {
         getTopVotedPrompt();
-    },  600);
+    },  600000000);
 
     return () => {
         isMounted = false;
@@ -102,9 +102,8 @@ useEffect(() => {
           <Stack.Navigator>
             {user ? (
               <>
-                {/* User is signed in, show the main app with FooterNavigator and other screens */}
                 <Stack.Screen name="Main" component={FooterNavigator} options={{ headerShown: false }} />
-                <Stack.Screen name="Follow" component={FollowScreen} />
+                <Stack.Screen name="Follow" component={FollowScreen}  />
                 <Stack.Screen name="Followers" component={FollowersScreen} />
                 <Stack.Screen name="Following" component={FollowingScreen} />
                 <Stack.Screen name="Profile" component={ProfileScreen} />
