@@ -607,11 +607,6 @@ const styles = StyleSheet.create({
     marginLeft: 'auto',
 
   },
-  commentTimestamp: {
-    fontSize: 12,
-    color: "#999",
-    marginBottom: 2,
-  },
-  
+
   
 });
