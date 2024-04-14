@@ -208,6 +208,8 @@ const PromptScreen = ({ navigation }) => {
       sortedPrompts.sort((a, b) => b.upvotes.length - a.upvotes.length);
     } else if (sortBy === "recent") {
       sortedPrompts.sort((a, b) => b.createdAt - a.createdAt);
+    } else if (sortBy === "downvotes") {
+      sortedPrompts.sort((a, b) => b.downvotes.length - a.downvotes.length);
     }
     setPrompts(sortedPrompts);
   };
@@ -248,6 +250,15 @@ const PromptScreen = ({ navigation }) => {
           }}
         >
           <Text style={[styles.sortButtonText, {color: '#3B82F6'}]}>Sort by Upvotes</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.sortButton, {backgroundColor: '#FFF'}]}
+          onPress={() => {
+            sortPrompts("downvotes");
+            setSortBy("downvotes");
+          }}
+        >
+          <Text style={[styles.sortButtonText, {color: '#3B82F6'}]}>Sort by Downvotes</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.sortButton, {backgroundColor: '#FFF'}]}
@@ -363,9 +374,18 @@ const styles = StyleSheet.create({
     marginBottom: 15
   },
   sortButton: {
-    borderRadius: 5,
-    padding: 10,
+    flex: 0.3, // Reduce the flex value to make buttons slimmer
+    marginHorizontal: 5, // Add some horizontal margin between buttons
+    paddingVertical: 10, // Increase vertical padding for better touch target
     alignItems: "center",
+    justifyContent: "center", // Vertically center the content
+    backgroundColor: "#FFF",
+    borderRadius: 5,
+  },
+  sortButtonText: {
+    fontWeight: "bold",
+    color: "#3B82F6",
+    textAlign: "center", // Center text horizontally
   },
   addSubmissionContainer: {
     backgroundColor: '#FFFFFF', 
@@ -413,9 +433,6 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "700",
     fontSize: 16,
-  },
-  sortButtonText: {
-    fontWeight: "bold",
   },
 
   commentButton: {
