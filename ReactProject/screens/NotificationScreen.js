@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
-import { collection, query, getDoc,doc, orderBy, onSnapshot } from "firebase/firestore";
+import { collection, query, getDoc, doc, orderBy, onSnapshot } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
+import { Ionicons } from '@expo/vector-icons';
+import moment from 'moment'; 
 
 const NotificationScreen = () => {
   const [notifications, setNotifications] = useState([]);
   const userId = auth.currentUser?.uid;
   useEffect(() => {
     setNotifications([]);
-    
   }, []);
   
   useEffect(() => {
@@ -61,7 +62,6 @@ const NotificationScreen = () => {
         };
       }
     );
-
     const unsubscribeComments = onSnapshot(
       collection(db, `users/${userId}/essences`),
       (snapshot) => {
@@ -69,41 +69,44 @@ const NotificationScreen = () => {
           const essenceId = essenceDoc.id;
           const commentsRef = collection(db, `users/${userId}/essences/${essenceId}/comments`);
           const commentsQuery = query(commentsRef, orderBy("createdAt", "desc"));
-          return onSnapshot(commentsQuery, (commentsSnapshot) => {
-            const commentsNotifications = commentsSnapshot.docs.map((commentDoc) => {
+          return onSnapshot(commentsQuery, async (commentsSnapshot) => {
+            const commentsNotifications = await Promise.all(commentsSnapshot.docs.map(async (commentDoc) => {
               const commentContent = commentDoc.data().text;
+              const userDocRef = doc(db, "users", commentDoc.data().userId);
+              const userSnapshot = await getDoc(userDocRef); // Await the getDoc function
+              const username = userSnapshot.exists() ? userSnapshot.data().username : "Unknown";  
               if (commentContent.trim() !== "") {
-                  return {
-                      id: commentDoc.id,
-                      type: "comment",
-                      title: "New Comment",
-                      content: commentContent,
-                      time: formatNotificationTime(commentDoc.data().createdAt),
-                  };
+                return {
+                  id: commentDoc.id,
+                  type: "comment",
+                  title: "New Comment",
+                  content: `${username} commented ${commentContent}.`,
+                  time: formatNotificationTime(commentDoc.data().createdAt),
+                };
               } else {
-                  return null;
+                return null;
               }
-          });
-          
-          const filteredCommentsNotifications = commentsNotifications.filter(notification => notification !== null);
-          
-          setNotifications((prevNotifications) => {
+            }));
+            
+            const filteredCommentsNotifications = commentsNotifications.filter(notification => notification !== null);
+            
+            setNotifications((prevNotifications) => {
               const updatedNotifications = [
-                  ...prevNotifications,
-                  ...filteredCommentsNotifications,
+                ...prevNotifications,
+                ...filteredCommentsNotifications,
               ];
               return updatedNotifications;
-          });
-          
+            });
             
           });
         });
-
+    
         return () => {
           unsubscribeComments.forEach((unsubscribe) => unsubscribe());
         };
       }
     );
+    
 
     return () => {
       unsubscribeLikes();
@@ -112,29 +115,36 @@ const NotificationScreen = () => {
   }, []);
 
   const formatNotificationTime = (timestamp) => {
-    return timestamp.toDate().toLocaleString();
+    return moment(timestamp.toDate()).fromNow();
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {notifications.map((notification, index) => (
         <View key={`notification-${index}`} style={styles.notification}>
-          <Text style={styles.notificationTitle}>{notification.title}</Text>
-          <Text style={styles.notificationContent}>{notification.content}</Text>
-          {notification.time && <Text style={styles.notificationTime}>{notification.time}</Text>}
+          <View style={styles.notificationHeader}>
+            <Text style={styles.notificationTitle}>{notification.title}</Text>
+            <Text style={styles.notificationTime}>{notification.time}</Text>
+          </View>
+          <View style={styles.notificationContent}>
+            {notification.type === "like" ? (
+              <Ionicons name="heart-outline" size={24} color="#FF5733" />
+            ) : (
+              <Ionicons name="chatbubble-outline" size={24} color="#4A90E2" />
+            )}
+            <Text style={styles.notificationText}>{notification.content}</Text>
+          </View>
         </View>
       ))}
     </ScrollView>
   );
-  
-  
 };
 
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 20,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#c0e0ed",
   },
   notification: {
     backgroundColor: "#F0F0F0",
@@ -142,18 +152,27 @@ const styles = StyleSheet.create({
     padding: 15,
     marginBottom: 15,
   },
+  notificationHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
   notificationTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    marginBottom: 5,
-  },
-  notificationContent: {
-    fontSize: 16,
-    marginBottom: 5,
   },
   notificationTime: {
     fontSize: 12,
     color: "#999999",
+  },
+  notificationContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  notificationText: {
+    marginLeft: 10,
+    fontSize: 16,
   },
 });
 
