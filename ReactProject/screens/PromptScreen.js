@@ -7,6 +7,29 @@ import PromptContext from "../contexts/PromptContext";
 import moment from 'moment';
 
 const PromptScreen = ({ navigation }) => {
+
+  const getNextFridayNoon = () => {
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // Sunday is 0, Monday is 1, ..., Saturday is 6
+    const daysUntilFriday = (5 - dayOfWeek + 7) % 7; // Number of days until next Friday
+    const nextFriday = new Date(today.getTime() + daysUntilFriday * 24 * 60 * 60 * 1000);
+    nextFriday.setHours(12, 0, 0, 0); // Set time to noon
+    return nextFriday;
+  };
+  
+  const calculateCountdown = () => {
+    const nextFridayNoon = getNextFridayNoon();
+    const now = new Date();
+    const difference = nextFridayNoon - now;
+  
+    const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+  
+    return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+  };
+  
   const [prompts, setPrompts] = useState([]);
   const [totalVotes, setTotalVotes] = useState(0);
   const [hasVoted, setHasVoted] = useState(false);
@@ -16,6 +39,7 @@ const PromptScreen = ({ navigation }) => {
   const [showComments, setShowComments] = useState({});
   const [comments, setComments] = useState({});
   const [commentText, setCommentText] = useState({});
+  const [countdown, setCountdown] = useState(calculateCountdown());
 
 
 
@@ -24,6 +48,13 @@ const PromptScreen = ({ navigation }) => {
   }, []);
   
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCountdown(calculateCountdown());
+    }, 1000);
+  
+    return () => clearInterval(interval);
+  }, []);
 
   const fetchPromptsAndVotes = async () => {
     const promptsRef = collection(db, "potentialPrompts");
@@ -216,6 +247,7 @@ const PromptScreen = ({ navigation }) => {
 
   return (
     <ScrollView style={styles.container}>
+      <Text style={styles.countdown}>{countdown} Until next Prompt</Text>
      {!isPromptAnswered ? (
   <View style={styles.addSubmissionContainer}>
     <Text style={styles.addSubmissionText}>
@@ -500,6 +532,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#333',
     marginBottom: 5,
+  },
+  countdown: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
+    color: '#3B82F6', // Adjust the color to your preference
   },
   
   
