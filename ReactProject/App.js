@@ -90,7 +90,7 @@ useEffect(() => {
       const fridayNoon = new Date(now.getTime() + millisecondsUntilFriday);
       fridayNoon.setHours(12, 0, 0, 0); 
 
-      return 10; 
+      return fridayNoon.getTime() - now.getTime();
     };
     const updateCountdown = () => {
       const millisecondsUntilFridayNoon = calculateMillisecondsUntilFridayNoon();
