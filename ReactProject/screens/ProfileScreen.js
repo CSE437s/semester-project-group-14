@@ -37,7 +37,24 @@ const ProfileScreen = () => {
   const [username, setUsername] = useState("");
   const [profilePic, setProfilePic] = useState(null);
   const [followedUserIds, setFollowedUserIds] = useState([]);
+  const [bio, setBio] = useState(""); 
 
+  useEffect(() => {
+    const fetchBio = async () => {
+      if (userId) {
+        try {
+          const userDoc = await getDoc(doc(db, "users", userId));
+          if (userDoc.exists()) {
+            setBio(userDoc.data().bio || ""); 
+          }
+        } catch (error) {
+          console.error("Error getting bio:", error);
+        }
+      }
+    };
+
+    fetchBio();
+  }, [userId]);
 
   useEffect(() => {
     const fetchFollowing = async () => {
@@ -193,16 +210,17 @@ const ProfileScreen = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Image
-          source={profilePic ? { uri: profilePic } : require("./../assets/profile-pic.jpg")}
-          style={styles.profilePicture}
-        />
-        <View style={styles.userInfo}>
-          <Text style={styles.greeting}>Welcome, {username || auth.currentUser?.email}</Text>
-          <Text style={styles.userBio}>Share and discover the small joys in life.</Text>
-        </View>
-      </View>
+ <View style={styles.header}>
+  <Image
+    source={profilePic ? { uri: profilePic } : require("./../assets/profile-pic.jpg")}
+    style={styles.profilePicture}
+  />
+  <View style={styles.userInfo}>
+    <Text style={styles.greeting}>Welcome, {username || auth.currentUser?.email}</Text>
+    <Text style={styles.userBio}>{bio}</Text>
+  </View>
+</View>
+
 
       <View style={styles.statsContainer}>
       <TouchableOpacity onPress={() => {
@@ -278,19 +296,25 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     marginRight: 15,
   },
+  userBio: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 5,
+    fontStyle: 'italic',
+    textAlign: 'justify',
+  },
+  
   userInfo: {
     flex: 1,
+    marginLeft: 10,
   },
+  
   greeting: {
     fontSize: 18,
     fontWeight: "bold",
     color: "#333",
   },
-  userBio: {
-    fontSize: 14,
-    color: "#666",
-    marginTop: 5,
-  },
+  
   essenceItem: {
     backgroundColor: "#fff",
     borderRadius: 10,
@@ -318,11 +342,10 @@ const styles = StyleSheet.create({
   signOutButton: {
     backgroundColor: "#FF7F7F",
     borderRadius: 20,
-    padding: 15,
+    padding: 10,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 2.5,
-    marginBottom: 5,
     width: 100,
     marginLeft: 125,
   },
@@ -334,8 +357,7 @@ const styles = StyleSheet.create({
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 10,
-    marginBottom: 20,
+    marginBottom: 10,
   },
   statsBox: {
     alignItems: "center",
