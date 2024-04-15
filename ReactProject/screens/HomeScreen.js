@@ -16,6 +16,7 @@ import {
   collection,
   addDoc,
   getDoc,
+  getDocs,
   doc,
   onSnapshot,
   query,
@@ -25,7 +26,7 @@ setDoc,
 } from "firebase/firestore";
 import { fetchFollowerCount, fetchFollowingCount } from "../services/UserService";
 import * as ImagePicker from 'expo-image-picker';
-
+import { Ionicons } from "@expo/vector-icons";
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -42,17 +43,23 @@ const HomeScreen = () => {
       collection(db, `users/${userId}/essences`),
       orderBy("createdAt", "desc")
     );
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
       const essences = [];
-      snapshot.forEach((doc) => {
-        essences.push({ id: doc.id, ...doc.data() });
-      });
+      for (const doc of snapshot.docs) {
+        const essenceData = doc.data();
+        const likesQuerySnapshot = await getDocs(collection(db, `users/${userId}/essences/${doc.id}/likes`));
+        const commentsQuerySnapshot = await getDocs(collection(db, `users/${userId}/essences/${doc.id}/comments`));
+        const likes = likesQuerySnapshot.docs.map(likeDoc => likeDoc.data());
+        const comments = commentsQuerySnapshot.docs.map(commentDoc => commentDoc.data());
+        essences.push({ id: doc.id, ...essenceData, likes, comments });
+      }
       setEssencesData(essences);
       setLoading(false);
     });
-
+  
     return () => unsubscribe();
   }, []);
+  
 
   useEffect(() => {
     const userId = auth.currentUser?.uid;
@@ -108,16 +115,31 @@ const HomeScreen = () => {
       })
       .catch((error) => alert(error.message));
   };
+  const EssenceItem = ({ item,prompt, response, imageUri, likes, comments }) => {
+    console.log("item:", item);
 
-  const EssenceItem = ({ prompt, response, imageUri }) => {
+    console.log("Likes:", likes);
+    console.log("Comments:", comments);
+  
     return (
       <TouchableOpacity style={styles.essenceItem}>
         <Text style={styles.essenceTitle}>{prompt}</Text>
         {imageUri && <Image source={{ uri: imageUri }} style={styles.essenceImage} />}
         <Text style={styles.essenceResponse}>{response}</Text>
+        <View style={styles.iconContainer}>
+          <View style={styles.iconItem}>
+            <Ionicons name="heart-outline" size={20} color="#3B82F6" />
+            <Text style={styles.iconText}>{likes ? likes.length : 0}</Text>
+          </View>
+          <View style={styles.iconItem}>
+            <Ionicons name="chatbubble-outline" size={20} color="#3B82F6" />
+            <Text style={styles.iconText}>{comments ? comments.length : 0}</Text>
+          </View>
+        </View>
       </TouchableOpacity>
     );
   };
+  
   
   const navigateToPromptScreen = () => {
     navigation.navigate("Prompt");
@@ -236,7 +258,7 @@ const HomeScreen = () => {
         <FlatList
         data={essencesData}
         renderItem={({ item }) => (
-          <EssenceItem imageUri={item.imageUri} prompt={item.prompt} response={item.response} />
+          <EssenceItem item={item} comments={item.comments} likes ={item.likes} imageUri={item.imageUri} prompt={item.prompt} response={item.response} />
         )}
         keyExtractor={(item) => item.id}
         numColumns={2}
@@ -362,6 +384,20 @@ const styles = StyleSheet.create({
       marginVertical: 10,
       borderRadius: 10,
     },
+    iconItem: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    iconText: {
+      marginLeft: 5,
+    },
+    iconContainer: {
+      flexDirection: "row",
+      justifyContent: "space-around",
+      marginTop: 10,
+      width: 100, 
+    },
+    
   });
   
   export default HomeScreen;

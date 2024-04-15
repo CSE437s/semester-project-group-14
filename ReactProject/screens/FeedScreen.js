@@ -366,11 +366,6 @@ export default function FeedScreen() {
   };
   
 
-  
-  
-  
-  
-
   return (
     <View style={styles.container}>
       <View style={styles.displayContainer}>
