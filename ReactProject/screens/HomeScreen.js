@@ -8,6 +8,7 @@ import {
   Image,
   ActivityIndicator,
   Alert,
+  TextInput
 } from "react-native";
 import { useNavigation } from "@react-navigation/core";
 import { useFocusEffect } from "@react-navigation/native";
@@ -16,16 +17,17 @@ import {
   collection,
   addDoc,
   getDoc,
+  getDocs,
   doc,
   onSnapshot,
   query,
-setDoc,
+  setDoc,
   orderBy,
   updateDoc
 } from "firebase/firestore";
 import { fetchFollowerCount, fetchFollowingCount } from "../services/UserService";
 import * as ImagePicker from 'expo-image-picker';
-
+import { Ionicons } from "@expo/vector-icons";
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -35,6 +37,8 @@ const HomeScreen = () => {
   const [followingCount, setFollowingCount] = useState(0);
   const [username, setUsername] = useState('');
   const [profilePic, setProfilePic] = useState(null); 
+  const [bio, setBio] = useState(''); 
+  const [bioEditMode, setBioEditMode] = useState(false);
 
   useEffect(() => {
     const userId = auth.currentUser?.uid;
@@ -42,17 +46,23 @@ const HomeScreen = () => {
       collection(db, `users/${userId}/essences`),
       orderBy("createdAt", "desc")
     );
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
       const essences = [];
-      snapshot.forEach((doc) => {
-        essences.push({ id: doc.id, ...doc.data() });
-      });
+      for (const doc of snapshot.docs) {
+        const essenceData = doc.data();
+        const likesQuerySnapshot = await getDocs(collection(db, `users/${userId}/essences/${doc.id}/likes`));
+        const commentsQuerySnapshot = await getDocs(collection(db, `users/${userId}/essences/${doc.id}/comments`));
+        const likes = likesQuerySnapshot.docs.map(likeDoc => likeDoc.data());
+        const comments = commentsQuerySnapshot.docs.map(commentDoc => commentDoc.data());
+        essences.push({ id: doc.id, ...essenceData, likes, comments });
+      }
       setEssencesData(essences);
       setLoading(false);
     });
-
+  
     return () => unsubscribe();
   }, []);
+  
 
   useEffect(() => {
     const userId = auth.currentUser?.uid;
@@ -108,14 +118,33 @@ const HomeScreen = () => {
       })
       .catch((error) => alert(error.message));
   };
+  
+  const EssenceItem = ({ item,prompt, response, imageUri, likes, comments }) => {
+    console.log("item:", item);
 
-  const EssenceItem = ({ prompt, response }) => (
-    <TouchableOpacity style={styles.essenceItem}>
-      <Text style={styles.essenceTitle}>{prompt}</Text>
-      <Text style={styles.essenceResponse}>{response}</Text>
-    </TouchableOpacity>
-  );
-
+    console.log("Likes:", likes);
+    console.log("Comments:", comments);
+  
+    return (
+      <TouchableOpacity style={styles.essenceItem}>
+        <Text style={styles.essenceTitle}>{prompt}</Text>
+        {imageUri && <Image source={{ uri: imageUri }} style={styles.essenceImage} />}
+        <Text style={styles.essenceResponse}>{response}</Text>
+        <View style={styles.iconContainer}>
+          <View style={styles.iconItem}>
+            <Ionicons name="heart-outline" size={20} color="#3B82F6" />
+            <Text style={styles.iconText}>{likes ? likes.length : 0}</Text>
+          </View>
+          <View style={styles.iconItem}>
+            <Ionicons name="chatbubble-outline" size={20} color="#3B82F6" />
+            <Text style={styles.iconText}>{comments ? comments.length : 0}</Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+  
+  
   const navigateToPromptScreen = () => {
     navigation.navigate("Prompt");
   };
@@ -135,6 +164,9 @@ const HomeScreen = () => {
             } else {
               console.log("Profile picture not found for current user");
             }
+            if (userData && userData.bio) { 
+              setBio(userData.bio);
+            }
           } else {
             console.error("User document does not exist for current user");
           }
@@ -148,6 +180,20 @@ const HomeScreen = () => {
   
     fetchProfilePic();
   }, []);
+
+  const updateBio = async () => {
+    const currentUserId = auth.currentUser?.uid;
+    if (currentUserId) {
+      try {
+        const userDocRef = doc(db, "users", currentUserId);
+        await updateDoc(userDocRef, { bio });
+      } catch (error) {
+        console.error("Error updating bio:", error);
+      }
+    } else {
+      console.error("Current user ID is not available");
+    }
+  };
   
   const handleProfilePictureSelect = async () => {
     try {
@@ -189,21 +235,41 @@ const HomeScreen = () => {
     }
   };
   
-  
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={handleProfilePictureSelect}>
-        <Image   source={profilePic ? { uri: profilePic } : require("./../assets/profile-pic.jpg")}
- style={styles.profilePicture} />
-
-       
+          <Image source={profilePic ? { uri: profilePic } : require("./../assets/profile-pic.jpg")} style={styles.profilePicture} />
         </TouchableOpacity>
-        <View style={styles.userInfo}>
+        <TouchableOpacity style={styles.userInfo} onPress={() => setBioEditMode(true)}>
           <Text style={styles.greeting}>Welcome, {username || auth.currentUser?.email}</Text>
-          <Text style={styles.userBio}>Share and discover the small joys in life.</Text>
-        </View>
+          <View style={styles.bioContainer}>
+            {bioEditMode ? (
+              <View style={styles.bioEditContainer}>
+                <TextInput
+                  style={styles.userBioInput}
+                  value={bio}
+                  onChangeText={setBio}
+                  autoFocus={true}
+                  multiline={true}
+                  placeholder="Write your bio..."
+                />
+                <TouchableOpacity style={styles.saveBioButton} onPress={() => { setBioEditMode(false); updateBio(); }}>
+                  <Text style={styles.saveBioButtonText}>Save</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ flex: 1, maxWidth: '80%' }}> 
+                  <Text style={styles.userBio}>{bio || "Write a bio..."}</Text>
+                </View>
+                <TouchableOpacity onPress={() => setBioEditMode(true)}>
+                <Ionicons name="pencil-outline" size={20} color="#3B82F6" style={{ marginLeft: 10 }} /> 
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </TouchableOpacity>
       </View>
   
       <View style={styles.statsContainer}>
@@ -231,14 +297,15 @@ const HomeScreen = () => {
         />
       ) : (
         <FlatList
-          data={essencesData}
-          renderItem={({ item }) => (
-            <EssenceItem prompt={item.prompt} response={item.response} />
-          )}
-          keyExtractor={(item) => item.id}
-          numColumns={2}
-          contentContainerStyle={styles.essencesGrid}
-        />
+        data={essencesData}
+        renderItem={({ item }) => (
+          <EssenceItem item={item} comments={item.comments} likes ={item.likes} imageUri={item.imageUri} prompt={item.prompt} response={item.response} />
+        )}
+        keyExtractor={(item) => item.id}
+        numColumns={2}
+        contentContainerStyle={styles.essencesGrid}
+      />
+      
       )}
 
     </View>
@@ -257,7 +324,7 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 2,
-    backgroundColor: '#c2ecfc', // Light gray color for the separator
+    backgroundColor: '#c2ecfc', 
     marginVertical: 20,
   },
   profilePicture: {
@@ -279,13 +346,18 @@ const styles = StyleSheet.create({
     color: "#666",
     marginTop: 5,
   },
+  bioContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   promptButton: {
     backgroundColor: "#00008B",
     borderRadius: 20,
     padding: 15,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 10, // Adjust as necessary
+    marginBottom: 10, 
   },
   promptButtonText: {
     color: "#fff",
@@ -319,11 +391,10 @@ const styles = StyleSheet.create({
     signOutButton: {
       backgroundColor: "#FF7F7F",
       borderRadius: 20,
-      padding: 15,
+      padding: 10,
       justifyContent: "center",
       alignItems: "center",
       marginTop: 2.5,
-      marginBottom: 5, 
       width: 100,
       marginLeft: 125,
     },
@@ -335,8 +406,7 @@ const styles = StyleSheet.create({
     statsContainer: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      marginTop: 10,
-      marginBottom: 20,
+      marginBottom: 10,
     },
     statsBox: {
       alignItems: 'center',
@@ -352,7 +422,84 @@ const styles = StyleSheet.create({
       color: '#666',
       marginTop: 5,
     },
+    essenceImage: {
+      width: 100,
+      height: 100,
+      marginVertical: 10,
+      borderRadius: 10,
+    },
+    iconItem: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    iconText: {
+      marginLeft: 5,
+    },
+    iconContainer: {
+      flexDirection: "row",
+      justifyContent: "space-around",
+      marginTop: 10,
+      width: 100, 
+    },
+    userInfo: {
+      flex: 1,
+      marginLeft: 10, 
+    },
+    greeting: {
+      fontSize: 18,
+      fontWeight: "bold",
+      color: "#333",
+      marginBottom: 5, 
+    },
+    userBio: {
+      fontSize: 14,
+      color: "#666",
+      marginTop: 5,
+      fontStyle: 'italic', 
+      textAlign: 'justify', 
+    },
+    bioEditContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginTop: 10, 
+    },
+    userBioInput: {
+      fontSize: 14,
+      color: "#333", 
+      marginTop: 5,
+      padding: 10, 
+      borderWidth: 1,
+      borderColor: "#ccc",
+      borderRadius: 5,
+      flex: 1,
+    },
+    editIcon: {
+      marginLeft: 10,
+    },
+    saveBioButton: {
+      backgroundColor: '#3B82F6',
+      borderRadius: 5,
+      padding: 10,
+      marginLeft:10,
+    },
+    saveBioButtonText: {
+      color: '#fff',
+      fontWeight: 'bold',
+    },
+    editBioButton: {
+      marginTop: 5,
+      alignSelf: 'flex-start',
+      backgroundColor: '#3B82F6', 
+      borderRadius: 5,
+      paddingHorizontal: 10, 
+      paddingVertical: 5,
+    },
+    editBioButtonText: {
+      color: "#fff",
+      fontSize: 14,
+      fontWeight: 'bold', 
+    },
   });
   
   export default HomeScreen;
-  

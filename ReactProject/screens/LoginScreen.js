@@ -97,6 +97,7 @@ const LoginScreen = () => {
       </View>
       <View style={styles.inputContainer}>
         <TextInput
+          autoCorrect={false} 
           autoCapitalize="none"
           placeholder="Email or Username"
           value={loginInput}
@@ -104,6 +105,7 @@ const LoginScreen = () => {
           style={styles.input}
         />
         <TextInput
+          autoCorrect={false} 
           placeholder="Password"
           value={password}
           onChangeText={setPassword}

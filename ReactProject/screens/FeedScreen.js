@@ -340,6 +340,7 @@ export default function FeedScreen() {
           <View style={styles.commentsSection}>
             <View style={styles.commentInputContainer}>
               <TextInput
+                autoCorrect={false} 
                 style={styles.commentInput}
                 value={commentText[item.id] || ''}
                 onChangeText={(text) => setCommentText(prev => ({ ...prev, [item.id]: text }))}
@@ -365,11 +366,6 @@ export default function FeedScreen() {
   };
   
 
-  
-  
-  
-  
-
   return (
     <View style={styles.container}>
       <View style={styles.displayContainer}>
@@ -390,6 +386,7 @@ export default function FeedScreen() {
   <Text styles={styles.popupPrompt}>{prompt}</Text>
 
   <TextInput
+    autoCorrect={false} 
     autoCapitalize="none"
     style={styles.responseInput}
     value={newEssence}
@@ -607,11 +604,6 @@ const styles = StyleSheet.create({
     marginLeft: 'auto',
 
   },
-  commentTimestamp: {
-    fontSize: 12,
-    color: "#999",
-    marginBottom: 2,
-  },
-  
+
   
 });

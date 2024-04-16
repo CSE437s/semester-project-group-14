@@ -1,39 +1,153 @@
 import React, { useState, useEffect, useContext } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, ScrollView } from "react-native";
 import { db, auth } from "../firebaseConfig";
-import { collection, getDocs, doc, addDoc, updateDoc, increment } from "firebase/firestore";
+import { collection, getDocs, getDoc, doc, addDoc, updateDoc, onSnapshot, increment } from "firebase/firestore";
 import { Ionicons } from '@expo/vector-icons'; // Import Ionicons
 import PromptContext from "../contexts/PromptContext";
+import moment from 'moment';
 
 const PromptScreen = ({ navigation }) => {
+
+  const getNextFridayNoon = () => {
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // Sunday is 0, Monday is 1, ..., Saturday is 6
+    const daysUntilFriday = (5 - dayOfWeek + 7) % 7; // Number of days until next Friday
+    const nextFriday = new Date(today.getTime() + daysUntilFriday * 24 * 60 * 60 * 1000);
+    nextFriday.setHours(12, 0, 0, 0); // Set time to noon
+    return nextFriday;
+  };
+  
+  const calculateCountdown = () => {
+    const nextFridayNoon = getNextFridayNoon();
+    const now = new Date();
+    const difference = nextFridayNoon - now;
+  
+    const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+  
+    return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+  };
+  
   const [prompts, setPrompts] = useState([]);
   const [totalVotes, setTotalVotes] = useState(0);
   const [hasVoted, setHasVoted] = useState(false);
   const [prompt, setPrompt, isPromptAnswered, setIsPromptAnswered] = useContext(PromptContext);
   const [newPotentialPrompt, setNewPotentialPrompt] = useState("");
   const [sortBy, setSortBy] = useState(""); // State to track sorting method
+  const [showComments, setShowComments] = useState({});
+  const [comments, setComments] = useState({});
+  const [commentText, setCommentText] = useState({});
+  const [countdown, setCountdown] = useState(calculateCountdown());
+
+
 
   useEffect(() => {
     fetchPromptsAndVotes();
   }, []);
+  
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCountdown(calculateCountdown());
+    }, 1000);
+  
+    return () => clearInterval(interval);
+  }, []);
 
   const fetchPromptsAndVotes = async () => {
     const promptsRef = collection(db, "potentialPrompts");
-    const snapshot = await getDocs(promptsRef);
-    let totalUpvotes = 0;
-    let totalDownvotes = 0;
-    const fetchedPrompts = snapshot.docs.map((doc) => {
-      const promptData = { id: doc.id, ...doc.data() };
-      totalUpvotes += promptData.upvotes.length;
-      totalDownvotes += promptData.downvotes.length;
-      return promptData;
+    const unsubscribe = onSnapshot(promptsRef, (snapshot) => {
+      let totalUpvotes = 0;
+      let totalDownvotes = 0;
+      const fetchedPrompts = snapshot.docs.map((doc) => {
+        const promptData = { id: doc.id, ...doc.data() };
+        totalUpvotes += promptData.upvotes.length;
+        totalDownvotes += promptData.downvotes.length;
+        return promptData;
+      });
+      setPrompts(fetchedPrompts);
+      setTotalVotes({ upvotes: totalUpvotes, downvotes: totalDownvotes });
     });
-
-    setPrompts(fetchedPrompts);
-    setTotalVotes({ upvotes: totalUpvotes, downvotes: totalDownvotes });
+  
+    return unsubscribe; 
   };
   
 
+
+  const toggleCommentsVisibility = async (promptId, postUserId) => {
+    setShowComments(prev => ({ ...prev, [promptId]: !prev[promptId] }));
+  
+    if (!showComments[promptId]) {
+      await fetchCommentsForEssence(promptId,postUserId);
+    }
+  };
+  
+  
+  
+
+  
+  
+  const fetchCommentsForEssence = async (promptId, postUserId) => {
+    try {
+      const userId = auth.currentUser?.uid;
+      if (!userId) {
+        console.error("User is not authenticated.");
+        return;
+      }
+  
+      const promptIndex = prompts.findIndex((prompt) => prompt.id === promptId);
+  
+      if (promptIndex === -1) {
+        console.error("Prompt not found.");
+        return;
+      }
+  
+      const commentsSnapshot = await getDocs(collection(db, `potentialPrompts/${promptId}/comments`));
+      const commentsList = [];
+      for (const docSnapshot of commentsSnapshot.docs) {
+        const commentData = docSnapshot.data();
+        const userDocRef = doc(db, "users", commentData.userId);
+        const userSnapshot = await getDoc(userDocRef);
+        const username = userSnapshot.exists() ? userSnapshot.data().username : "Unknown";
+        commentsList.push({ ...commentData, username });
+      }
+      setComments(prev => ({ ...prev, [promptId]: commentsList }));
+    } catch (error) {
+      console.error("Error fetching comments: ", error);
+    }
+  };
+  
+  
+  
+  
+  const handlePostComment = async (promptId, postUserId) => {
+    const userId = auth.currentUser?.uid;
+    const newCommentText = commentText[promptId] || '';
+  
+    if (newCommentText.trim() && userId) {
+      try {
+        await addDoc(collection(db, `potentialPrompts/${promptId}/comments`), {
+          userId,
+          text: newCommentText,
+          createdAt: new Date(),
+        });
+  
+        console.log("Comment added");
+        fetchCommentsForEssence(promptId);
+        setCommentText(prevState => ({ ...prevState, [promptId]: '' }));
+  
+        fetchCommentsForEssence(promptId, postUserId);
+      } catch (error) {
+        console.error("Error adding comment: ", error);
+        alert("Failed to post comment. Please try again.");
+      }
+    } else {
+      alert("Comment cannot be empty.");
+    }
+  };
+  
   const handleVote = async (promptId, voteType) => {
     const userId = auth.currentUser?.uid;
     const promptIndex = prompts.findIndex((prompt) => prompt.id === promptId);
@@ -86,25 +200,10 @@ const PromptScreen = ({ navigation }) => {
   
   useEffect(() => {
     fetchPromptsAndVotes();
-  }, [prompts]);
+  }, []);
   
   
   
-  const handleSelectPrompt = async (promptId) => {
-    if (promptId !== selectedPrompt) {
-      const newPromptRef = doc(db, "potentialPrompts", promptId);
-      await updateDoc(newPromptRef, { Votes: increment(1) });
-  
-      if (selectedPrompt) {
-        const oldPromptRef = doc(db, "potentialPrompts", selectedPrompt);
-        await updateDoc(oldPromptRef, { Votes: increment(-1) });
-      }
-  
-      setSelectedPrompt(promptId);
-      setHasVoted(true);
-      fetchPromptsAndVotes();
-    }
-  };
   
   const handleAddPotentialPrompt = async () => {
     if (newPotentialPrompt.trim() === "") {
@@ -120,6 +219,7 @@ const PromptScreen = ({ navigation }) => {
       userId: userId,
       upvotes: [], // Initialize as an empty array
       downvotes: [], // Initialize as an empty array
+      comments:[],
     };
   
     addDoc(collection(db, `potentialPrompts`), potentialPrompt)
@@ -139,12 +239,15 @@ const PromptScreen = ({ navigation }) => {
       sortedPrompts.sort((a, b) => b.upvotes.length - a.upvotes.length);
     } else if (sortBy === "recent") {
       sortedPrompts.sort((a, b) => b.createdAt - a.createdAt);
+    } else if (sortBy === "downvotes") {
+      sortedPrompts.sort((a, b) => b.downvotes.length - a.downvotes.length);
     }
     setPrompts(sortedPrompts);
   };
 
   return (
     <ScrollView style={styles.container}>
+      <Text style={styles.countdown}>{countdown} Until next Prompt</Text>
      {!isPromptAnswered ? (
   <View style={styles.addSubmissionContainer}>
     <Text style={styles.addSubmissionText}>
@@ -158,6 +261,8 @@ const PromptScreen = ({ navigation }) => {
   <View style={styles.addSubmissionContainer}>
     <Text style={styles.addSubmissionText}>Add a submission for next week's prompt!</Text>
     <TextInput
+                    autoCorrect={false} 
+
       value={newPotentialPrompt}
       onChangeText={setNewPotentialPrompt}
       style={styles.input}
@@ -183,6 +288,15 @@ const PromptScreen = ({ navigation }) => {
         <TouchableOpacity
           style={[styles.sortButton, {backgroundColor: '#FFF'}]}
           onPress={() => {
+            sortPrompts("downvotes");
+            setSortBy("downvotes");
+          }}
+        >
+          <Text style={[styles.sortButtonText, {color: '#3B82F6'}]}>Sort by Downvotes</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.sortButton, {backgroundColor: '#FFF'}]}
+          onPress={() => {
             sortPrompts("recent");
             setSortBy("recent");
           }}
@@ -190,26 +304,57 @@ const PromptScreen = ({ navigation }) => {
           <Text style={[styles.sortButtonText, {color: '#3B82F6'}]}>Sort by Recent</Text>
         </TouchableOpacity>
       </View>
-
       {prompts.map((prompt) => (
-        <View key={prompt.id} style={styles.promptContainer}>
-          <Text style={styles.promptText}>{prompt.Description}</Text>
-          <View style={styles.voteContainer}>
-            <View style={styles.voteSection}>
-              <TouchableOpacity onPress={() => handleVote(prompt.id, "upvote")} >
-                <Ionicons name="caret-up" size={18} color="#3B82F6" />
-              </TouchableOpacity>
-              <Text style={styles.voteCount}>{prompt.upvotes.length}</Text>
-            </View>
-            <View style={styles.voteSection}>
-              <TouchableOpacity onPress={() => handleVote(prompt.id, "downvote")}>
-                <Ionicons name="caret-down" size={18} color="#FF6347" />
-              </TouchableOpacity>
-              <Text style={styles.voteCount}>{prompt.downvotes.length}</Text>
-            </View>
-          </View>
-        </View>
-      ))}
+  <View key={prompt.id} style={styles.promptContainer}>
+    <Text style={styles.promptText}>{prompt.Description}</Text>
+    <View style={styles.voteContainer}>
+      <View style={styles.voteSection}>
+        <TouchableOpacity onPress={() => handleVote(prompt.id, "upvote")} >
+          <Ionicons name="caret-up" size={18} color="#3B82F6" />
+        </TouchableOpacity>
+        <Text style={styles.voteCount}>{prompt.upvotes.length}</Text>
+      </View>
+      <View style={styles.voteSection}>
+        <TouchableOpacity onPress={() => handleVote(prompt.id, "downvote")}>
+          <Ionicons name="caret-down" size={18} color="#FF6347" />
+        </TouchableOpacity>
+        <Text style={styles.voteCount}>{prompt.downvotes.length}</Text>
+      </View>
+      <TouchableOpacity onPress={() => toggleCommentsVisibility(prompt.id, auth.currentUser?.uid)} style={styles.commentButton}>
+        <Ionicons name="chatbubble-outline" size={20} color="#3B82F6" />
+      </TouchableOpacity>
+    </View>
+    {showComments[prompt.id] && (
+      <View style={styles.commentsSection}>
+  <View style={styles.commentInputContainer}>
+    <TextInput
+                    autoCorrect={false} 
+
+      style={styles.commentInput}
+      value={commentText[prompt.id] || ''}
+      onChangeText={(text) => setCommentText(prev => ({ ...prev, [prompt.id]: text }))}
+      placeholder="Write a comment..."
+    />
+    <TouchableOpacity onPress={() => handlePostComment(prompt.id, auth.currentUser?.uid)} style={styles.postCommentButton}>
+      <Text style={styles.postCommentButtonText}>Post</Text>
+    </TouchableOpacity>
+  </View>
+  {comments[prompt.id] && comments[prompt.id].map((comment, index) => (
+    <View key={index} style={styles.comment}>
+      <View style={styles.commentHeader}>
+        <Text style={styles.commentUsername}>{comment.username}</Text>
+        <Text style={styles.timestamp}>{moment(comment.createdAt.toDate()).fromNow()}</Text> 
+      </View>
+      <Text style={styles.commentText}>{comment.text}</Text>
+    </View>
+  ))}
+</View>
+
+    )}
+  </View>
+))}
+
+
     </ScrollView>
   );
 };
@@ -265,9 +410,18 @@ const styles = StyleSheet.create({
     marginBottom: 15
   },
   sortButton: {
-    borderRadius: 5,
-    padding: 10,
+    flex: 0.3, // Reduce the flex value to make buttons slimmer
+    marginHorizontal: 5, // Add some horizontal margin between buttons
+    paddingVertical: 10, // Increase vertical padding for better touch target
     alignItems: "center",
+    justifyContent: "center", // Vertically center the content
+    backgroundColor: "#FFF",
+    borderRadius: 5,
+  },
+  sortButtonText: {
+    fontWeight: "bold",
+    color: "#3B82F6",
+    textAlign: "center", // Center text horizontally
   },
   addSubmissionContainer: {
     backgroundColor: '#FFFFFF', 
@@ -316,9 +470,81 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 16,
   },
-  sortButtonText: {
-    fontWeight: "bold",
+
+  commentButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
+
+  commentInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 8,
+    marginRight: 10,
+  },
+  postCommentButton: {
+    backgroundColor: "#3B82F6",
+    borderRadius: 5,
+    padding: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  postCommentButtonText: {
+    color: 'white',
+  },
+  commentsSection: {
+    marginTop: 10,
+    flexDirection: 'column', 
+    
+  },
+  comment: {
+    marginTop: 5,
+    padding: 8,
+    backgroundColor: '#f2f2f2',
+    borderRadius: 5,
+  },
+  commentUsername: {
+    fontWeight: 'bold',
+    color: '#3B82F6', 
+  },
+  commentText: {
+    fontSize: 14,
+    color: '#333',
+    marginTop: 2,
+  },
+  commentInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  commentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  commentUsername: {
+    fontWeight: 'bold',
+    color: '#3B82F6',
+    fontSize: 14,
+  },
+  timestamp: {
+    color: '#999',    
+  },
+  commentText: {
+    fontSize: 14,
+    color: '#333',
+    marginBottom: 5,
+  },
+  countdown: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
+    color: '#3B82F6', // Adjust the color to your preference
+  },
+  
   
 });
 

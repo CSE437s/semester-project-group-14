@@ -55,6 +55,8 @@ const RegisterScreen = () => {
       </View>
       <View style={styles.inputContainer}>
         <TextInput
+                        autoCorrect={false} 
+
           autoCapitalize="none"
           placeholder="Email"
           value={loginInput}
@@ -62,6 +64,8 @@ const RegisterScreen = () => {
           style={styles.input}
         />
         <TextInput
+                        autoCorrect={false} 
+
           placeholder="Username" 
           autoCapitalize="none"
           value={username}
@@ -69,6 +73,8 @@ const RegisterScreen = () => {
           style={styles.input}
         />
         <TextInput
+                        autoCorrect={false} 
+
           placeholder="Password"
           value={password}
           onChangeText={setPassword}

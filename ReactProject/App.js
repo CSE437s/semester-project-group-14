@@ -1,7 +1,7 @@
-import React, { useState, useEffect, createContext } from "react";
-import { StyleSheet } from "react-native";
-import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
+import React, { useState, useEffect, createContext, useRef } from "react";
+import { StyleSheet,Button, View,Text, Platform } from "react-native";
+import { NavigationContainer } from "@react-navigation/native";
 import "@tamagui/core/reset.css";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "./tamagui.config";
@@ -18,6 +18,9 @@ import PromptContext from "./contexts/PromptContext";
 import ProfileScreen from "./screens/ProfileScreen";
 
 
+
+
+
 // const PromptContext = createContext();
 const Stack = createStackNavigator();
 
@@ -25,6 +28,8 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [prompt, setPrompt] = useState("");
   const [isPromptAnswered, setIsPromptAnswered] = useState(false);
+  const [countdown, setCountdown] = useState("");
+
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -33,6 +38,8 @@ export default function App() {
 
     return unsubscribe;
   }, []);
+
+  
 useEffect(() => {
     let isMounted = true;
 
@@ -48,6 +55,7 @@ useEffect(() => {
         } else {
             console.error("No prompts found in the database.");
         }
+        return;
     }
   
       let topPrompt = null;
@@ -81,15 +89,37 @@ useEffect(() => {
   
 
     getTopVotedPrompt();
+    const calculateMillisecondsUntilFridayNoon = () => {
+      const now = new Date();
+      const dayOfWeek = now.getDay();
+      const daysUntilFriday = (5 - dayOfWeek + 7) % 7;
+      const millisecondsUntilFriday = daysUntilFriday * 24 * 60 * 60 * 1000; 
+      const fridayNoon = new Date(now.getTime() + millisecondsUntilFriday);
+      fridayNoon.setHours(12, 0, 0, 0); 
+
+      return fridayNoon.getTime() - now.getTime();
+    };
+    const updateCountdown = () => {
+      const millisecondsUntilFridayNoon = calculateMillisecondsUntilFridayNoon();
+      const days = Math.floor(millisecondsUntilFridayNoon / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((millisecondsUntilFridayNoon % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((millisecondsUntilFridayNoon % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((millisecondsUntilFridayNoon % (1000 * 60)) / 1000);
+      setCountdown(`${days}d ${hours}h ${minutes}m ${seconds}s`);
+
+    };
+
 
     const interval = setInterval(() => {
-        getTopVotedPrompt();
-    },  600);
+      getTopVotedPrompt();
+    }, calculateMillisecondsUntilFridayNoon());
 
+    updateCountdown();
     return () => {
-        isMounted = false;
-        clearInterval(interval);
+      isMounted = false;
+      clearInterval(interval);
     };
+
 }, []);
 
 
@@ -97,14 +127,13 @@ useEffect(() => {
 
   return (
     <PromptContext.Provider value={ [prompt, setPrompt, isPromptAnswered, setIsPromptAnswered] }>
-      <TamaguiProvider config={tamaguiConfig}>
-        <NavigationContainer>
-          <Stack.Navigator>
-            {user ? (
+       <TamaguiProvider config={tamaguiConfig}>
+         <NavigationContainer>
+           <Stack.Navigator>
+             {user ? (
               <>
-                {/* User is signed in, show the main app with FooterNavigator and other screens */}
                 <Stack.Screen name="Main" component={FooterNavigator} options={{ headerShown: false }} />
-                <Stack.Screen name="Follow" component={FollowScreen} />
+                <Stack.Screen name="Follow" component={FollowScreen}  />
                 <Stack.Screen name="Followers" component={FollowersScreen} />
                 <Stack.Screen name="Following" component={FollowingScreen} />
                 <Stack.Screen name="Profile" component={ProfileScreen} />
@@ -134,3 +163,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 });
+
+
