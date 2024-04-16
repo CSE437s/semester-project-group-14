@@ -135,6 +135,11 @@ useEffect(() => {
               <>
                 <Stack.Screen name="Main" component={FooterNavigator} options={{ headerShown: false }} />
                 <Stack.Screen name="Notifications" component={NotificationScreen} options={{ title: 'Notifications' }} />
+                <Stack.Screen name="Follow" component={FollowScreen} />
+                <Stack.Screen name="Followers" component={FollowersScreen} />
+                <Stack.Screen name="Following" component={FollowingScreen} />
+                <Stack.Screen name="Profile" component={ProfileScreen} />
+
               </>
             ) : (
               // No user is signed in, show the Login screen
