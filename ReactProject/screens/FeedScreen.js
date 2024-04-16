@@ -265,105 +265,135 @@ export default function FeedScreen() {
     const newCommentText = commentText[essenceId] || '';
   
     if (newCommentText.trim() && userId) {
-      try {
-        await addDoc(collection(db, `users/${postUserId}/essences/${essenceId}/comments`), {
-          userId,
-          text: newCommentText,
-          createdAt: new Date(),
-        });
-  
-        console.log("Comment added");
-        fetchCommentsForEssence(essenceId);
-        setCommentText(prevState => ({ ...prevState, [essenceId]: '' }));
-  
-        fetchCommentsForEssence(essenceId, postUserId);
-      } catch (error) {
-        console.error("Error adding comment: ", error);
-        alert("Failed to post comment. Please try again.");
-      }
+        try {
+            const commentRef = await addDoc(collection(db, `users/${postUserId}/essences/${essenceId}/comments`), {
+                userId,
+                text: newCommentText,
+                createdAt: new Date(),
+            });
+
+            const commentId = commentRef.id; // Get the auto-generated comment ID
+
+            console.log("Comment added with ID: ", commentId);
+
+            fetchCommentsForEssence(essenceId, postUserId); // Fetch comments after adding the new one
+            setCommentText(prevState => ({ ...prevState, [essenceId]: '' }));
+        } catch (error) {
+            console.error("Error adding comment: ", error);
+            alert("Failed to post comment. Please try again.");
+        }
     } else {
-      alert("Comment cannot be empty.");
+        alert("Comment cannot be empty.");
     }
-  };
+};
+
   
   
 
-  const fetchCommentsForEssence = async (essenceId, postUserId) => {
-    try {
+const fetchCommentsForEssence = async (essenceId, postUserId) => {
+  try {
       const commentsSnapshot = await getDocs(collection(db, `users/${postUserId}/essences/${essenceId}/comments`));
       const commentsList = [];
       for (const docSnapshot of commentsSnapshot.docs) {
-        const commentData = docSnapshot.data();
-        const userDocRef = doc(db, "users", commentData.userId);
-        const userSnapshot = await getDoc(userDocRef);
-        const username = userSnapshot.exists() ? userSnapshot.data().username : "Unknown";
-        commentsList.push({ ...commentData, username });
+          const commentData = docSnapshot.data();
+          const commentId = docSnapshot.id; // Get the comment ID
+          const userDocRef = doc(db, "users", commentData.userId);
+          const userSnapshot = await getDoc(userDocRef);
+          const username = userSnapshot.exists() ? userSnapshot.data().username : "Unknown";
+          commentsList.push({ id: commentId, ...commentData, username }); // Include the comment ID in the comment data
+          console.log(commentId);
       }
       setComments(prev => ({ ...prev, [essenceId]: commentsList }));
-    } catch (error) {
+  } catch (error) {
       console.error("Error fetching comments: ", error);
-    }
-  };
-  
+  }
+};
+
+
   
   const renderItem = ({ item }) => {
     const timeAgo = moment(item.createdAt.toDate()).fromNow();
-    console.log("Image URI:", item.imageUri); 
-    return (
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <TouchableOpacity onPress={() => navigation.navigate('Profile', { userId: item.userId })} style={styles.cardHeader}>
-            <Image source={item.profilePicUrl ? { uri: item.profilePicUrl } : require("./../assets/profile-pic.jpg")} style={styles.avatar} />
-            <Text style={styles.username}>{item.username}</Text>
-          </TouchableOpacity>
-          <View style={styles.timestampContainer}>
-            <Text style={styles.timestamp}>{timeAgo}</Text> 
-          </View>
-        </View>
-        
-        {item.imageUri && 
-        <Image  style={styles.essenceImage} source={{ uri: item.imageUri }}></Image>
-      }
+    const currentUserId = auth.currentUser?.uid;
 
-        <Text style={styles.response}>{item.response}</Text>
-        <View style={styles.interactionBar}>
-          <TouchableOpacity onPress={() => handleLike(item.id, item.userId)} style={styles.likeButton}>
-            <Ionicons name={item.liked ? 'heart' : 'heart-outline'} size={20} color={item.liked ? "#3B82F6" : "#3B82F6"} />
-            <Text style={styles.likeCount}>{item.numLikes}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => toggleCommentsVisibility(item.id, item.userId)} style={styles.commentButton}>
-            <Ionicons name="chatbubble-outline" size={20} color="#3B82F6" />
-            <Text style={styles.likeCount}>{item.numComments}</Text>
-          </TouchableOpacity>
-        </View>
-        {showComments[item.id] && (
-          <View style={styles.commentsSection}>
-            <View style={styles.commentInputContainer}>
-              <TextInput
-                autoCorrect={false} 
-                style={styles.commentInput}
-                value={commentText[item.id] || ''}
-                onChangeText={(text) => setCommentText(prev => ({ ...prev, [item.id]: text }))}
-                placeholder="Write a comment..."
-              />
-              <TouchableOpacity onPress={() => handlePostComment(item.id, item.userId)} style={styles.postCommentButton}>
-                <Text style={styles.postCommentButtonText}>Post</Text>
-              </TouchableOpacity>
-            </View>
-            {comments[item.id] && comments[item.id].map((comment, index) => (
-              <View key={index} style={styles.comment}>
-                <View style={styles.timestampContainer}>
-                <Text style={styles.commentUsername}>{comment.username}</Text>
-                 <Text style={styles.timestamp}>{moment(comment.createdAt.toDate()).fromNow()}</Text> 
-              </View>
-                <Text style={styles.commentText}>{comment.text}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-      </View>
-    );
+    const handleDeleteComment = async (commentId) => {
+      try {
+          await deleteDoc(doc(db, `users/${item.userId}/essences/${item.id}/comments/${commentId}`));
+          console.log(item.userId);
+          console.log(item.id);
+          console.log(commentId);
+          alert("Comment deleted successfully!");
+          setComments((prevComments) => ({
+              ...prevComments,
+              [item.id]: prevComments[item.id].filter(comment => comment.id !== commentId)
+          }));
+      } catch (error) {
+          console.error("Error deleting comment: ", error);
+          alert("Failed to delete comment. Please try again.");
+      }
   };
+
+    return (
+        <View style={styles.card}>
+            <View style={styles.cardHeader}>
+                <TouchableOpacity onPress={() => navigation.navigate('Profile', { userId: item.userId })} style={styles.profileContainer}>
+                    <Image source={item.profilePicUrl ? { uri: item.profilePicUrl } : require("../assets/profile-pic.jpg")} style={styles.avatar} />
+                    <Text style={styles.username}>{item.username}</Text>
+                </TouchableOpacity>
+                <View style={styles.timestampContainer}>
+                    <Text style={styles.timestamp}>{timeAgo}</Text>
+                </View>
+            </View>
+            
+            {item.imageUri && 
+                <Image style={styles.essenceImage} source={{ uri: item.imageUri }} />
+            }
+
+            <Text style={styles.response}>{item.response}</Text>
+            <View style={styles.interactionBar}>
+                <TouchableOpacity onPress={() => handleLike(item.id, item.userId)} style={styles.likeButton}>
+                    <Ionicons name={item.liked ? 'heart' : 'heart-outline'} size={20} color={item.liked ? "#3B82F6" : "#3B82F6"} />
+                    <Text style={styles.likeCount}>{item.numLikes}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => toggleCommentsVisibility(item.id, item.userId)} style={styles.commentButton}>
+                    <Ionicons name="chatbubble-outline" size={20} color="#3B82F6" />
+                    <Text style={styles.likeCount}>{item.numComments}</Text>
+                </TouchableOpacity>
+            </View>
+            {showComments[item.id] && (
+                <View style={styles.commentsSection}>
+                    <View style={styles.commentInputContainer}>
+                        <TextInput
+                            autoCorrect={false} 
+                            style={styles.commentInput}
+                            value={commentText[item.id] || ''}
+                            onChangeText={(text) => setCommentText(prev => ({ ...prev, [item.id]: text }))}
+                            placeholder="Write a comment..."
+                        />
+                        <TouchableOpacity onPress={() => handlePostComment(item.id, item.userId)} style={styles.postCommentButton}>
+                            <Text style={styles.postCommentButtonText}>Post</Text>
+                        </TouchableOpacity>
+                    </View>
+                    {comments[item.id] && comments[item.id].map((comment, index) => (
+                        <View key={index} style={styles.comment}>
+                            <View style={styles.commentDetails}>
+                                <Text style={styles.commentUsername}>{comment.username}</Text>
+                                <Text style={styles.timestamp}>{moment(comment.createdAt.toDate()).fromNow()}</Text>
+                            </View>
+                            <Text style={styles.commentText}>{comment.text}</Text>
+                            {comment.userId === currentUserId && (
+                                <TouchableOpacity onPress={() => handleDeleteComment(comment.id)} style={styles.deleteCommentButton}>
+                                    <Ionicons name="trash-outline" size={16} color="red" />
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    ))}
+                </View>
+            )}
+        </View>
+    );
+};
+
+
   
 
   return (
