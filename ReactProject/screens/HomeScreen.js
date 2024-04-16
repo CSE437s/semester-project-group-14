@@ -23,7 +23,7 @@ import {
   query,
   setDoc,
   orderBy,
-  updateDoc
+  updateDoc,
 } from "firebase/firestore";
 import { fetchFollowerCount, fetchFollowingCount } from "../services/UserService";
 import * as ImagePicker from 'expo-image-picker';

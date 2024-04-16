@@ -460,18 +460,6 @@ const styles = StyleSheet.create({
   buttonWrapper: {
     marginRight: 10,
   },
-  modalBox: {
-    backgroundColor: "green",
-  },
-  
-  modalContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 1,
-    backgroundColor: "purple",
-    margin: 100,
-  },
   overlay: {
     position: "absolute",
     borderRadius: 0,

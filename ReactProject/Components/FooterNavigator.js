@@ -28,8 +28,8 @@ export default function FooterNavigator() {
             iconName = focused ? 'search' : 'search-outline';
           } else if (route.name === 'Prompt') {
             iconName = focused ? 'help' : 'help-outline';
-          } else if (route.name === 'Notifications') {
-            iconName = focused ? 'notifications' : 'notifications-outline'; // Adjusted icon names
+          } else if (route.name === 'Statistics') {
+            iconName = focused ? 'bar-chart' : 'bar-chart-outline'; // Adjusted icon names
           } else if (route.name === 'Home') {
             iconName = focused ? 'person-circle' : 'person-circle-outline'; // Adjusted icon names
           }
