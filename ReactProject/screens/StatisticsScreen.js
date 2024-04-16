@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { View, TextInput, Button, Text } from 'react-native';
+import { useNavigation, useRoute } from "@react-navigation/core";
 
 const StatisticsScreen = () => {
+  const route = useRoute();
   const [input1, setInput1] = useState('');
   const [input2, setInput2] = useState('');
   const [similarityScore, setSimilarityScore] = useState(null);
+  const userId = route.params.userId;
 
   const calculateSimilarity = () => {
     // Jaro Similarity Algorithm

@@ -16,6 +16,7 @@ import { db, auth } from "./firebaseConfig";
 import { collection,addDoc, deleteDoc,getDocs } from "firebase/firestore";
 import PromptContext from "./contexts/PromptContext";
 import ProfileScreen from "./screens/ProfileScreen";
+import NotificationScreen from "./screens/NotificationScreen";
 
 
 
@@ -133,6 +134,7 @@ useEffect(() => {
              {user ? (
               <>
                 <Stack.Screen name="Main" component={FooterNavigator} options={{ headerShown: false }} />
+                <Stack.Screen name="Notifications" component={NotificationScreen} options={{ title: 'Notifications' }} />
               </>
             ) : (
               // No user is signed in, show the Login screen
