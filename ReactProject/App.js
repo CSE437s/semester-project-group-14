@@ -133,11 +133,6 @@ useEffect(() => {
              {user ? (
               <>
                 <Stack.Screen name="Main" component={FooterNavigator} options={{ headerShown: false }} />
-                <Stack.Screen name="Follow" component={FollowScreen}  />
-                <Stack.Screen name="Followers" component={FollowersScreen} />
-                <Stack.Screen name="Following" component={FollowingScreen} />
-                <Stack.Screen name="Profile" component={ProfileScreen} />
-                {/* would put screens that user is required to be logged in to see here */}
               </>
             ) : (
               // No user is signed in, show the Login screen
@@ -145,7 +140,6 @@ useEffect(() => {
               <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
               <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
               </>
-
             )}
           </Stack.Navigator>
         </NavigationContainer>
