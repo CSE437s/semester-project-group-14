@@ -24,7 +24,7 @@ export default function FeedScreen() {
   const [commentText, setCommentText] = useState({});
   const [comments, setComments] = useState({});
   const [pickedImage, setPickedImage] = useState(null);
-
+  const [totalComments, setTotalComments] = useState({}); // State for total number of comments per essence
 
   
 
@@ -317,20 +317,29 @@ const fetchCommentsForEssence = async (essenceId, postUserId) => {
 
     const handleDeleteComment = async (commentId) => {
       try {
+          // Delete the comment from Firestore
           await deleteDoc(doc(db, `users/${item.userId}/essences/${item.id}/comments/${commentId}`));
-          console.log(item.userId);
-          console.log(item.id);
-          console.log(commentId);
-          alert("Comment deleted successfully!");
+          // console.log(item.userId);
+          // console.log(item.id);
+          // console.log(commentId);
+  
+          // Update the total number of comments for the essence
+          setTotalComments((prevTotalComments) => ({
+              ...prevTotalComments,
+              [item.id]: prevTotalComments[item.id] - 1
+            }));
+  
+          // Remove the deleted comment from the comments state
           setComments((prevComments) => ({
               ...prevComments,
-              [item.id]: prevComments[item.id].filter(comment => comment.id !== commentId)
+              [item.id]: prevComments[item.id].filter((comment) => comment.id !== commentId)
           }));
       } catch (error) {
           console.error("Error deleting comment: ", error);
           alert("Failed to delete comment. Please try again.");
       }
   };
+  
 
     return (
         <View style={styles.card}>
@@ -360,35 +369,38 @@ const fetchCommentsForEssence = async (essenceId, postUserId) => {
                 </TouchableOpacity>
             </View>
             {showComments[item.id] && (
-                <View style={styles.commentsSection}>
-                    <View style={styles.commentInputContainer}>
-                        <TextInput
-                            autoCorrect={false} 
-                            style={styles.commentInput}
-                            value={commentText[item.id] || ''}
-                            onChangeText={(text) => setCommentText(prev => ({ ...prev, [item.id]: text }))}
-                            placeholder="Write a comment..."
-                        />
-                        <TouchableOpacity onPress={() => handlePostComment(item.id, item.userId)} style={styles.postCommentButton}>
-                            <Text style={styles.postCommentButtonText}>Post</Text>
-                        </TouchableOpacity>
+            <View style={styles.commentsSection}>
+              <View style={styles.commentInputContainer}>
+                <TextInput
+                  autoCorrect={false} 
+                  style={styles.commentInput}
+                  value={commentText[item.id] || ''}
+                  onChangeText={(text) => setCommentText(prev => ({ ...prev, [item.id]: text }))}
+                  placeholder="Write a comment..."
+                />
+                <TouchableOpacity onPress={() => handlePostComment(item.id, item.userId)} style={styles.postCommentButton}>
+                  <Text style={styles.postCommentButtonText}>Post</Text>
+                </TouchableOpacity>
+              </View>
+              {comments[item.id] && comments[item.id].map((comment, index) => (
+                <View key={index} style={styles.comment}>
+                    <View style={styles.commentDetails}>
+                        <Text style={styles.commentUsername}>{comment.username}</Text>
+                        <Text style={styles.timestamp}>{moment(comment.createdAt.toDate()).fromNow()}</Text>
                     </View>
-                    {comments[item.id] && comments[item.id].map((comment, index) => (
-                        <View key={index} style={styles.comment}>
-                            <View style={styles.commentDetails}>
-                                <Text style={styles.commentUsername}>{comment.username}</Text>
-                                <Text style={styles.timestamp}>{moment(comment.createdAt.toDate()).fromNow()}</Text>
-                            </View>
-                            <Text style={styles.commentText}>{comment.text}</Text>
-                            {comment.userId === currentUserId && (
-                                <TouchableOpacity onPress={() => handleDeleteComment(comment.id)} style={styles.deleteCommentButton}>
-                                    <Ionicons name="trash-outline" size={16} color="red" />
-                                </TouchableOpacity>
-                            )}
-                        </View>
-                    ))}
+                    <View style={styles.commentContent}>
+                        <Text style={styles.commentText}>{comment.text}</Text>
+                        {comment.userId === currentUserId && (
+                            <TouchableOpacity onPress={() => handleDeleteComment(comment.id)} style={styles.deleteCommentButton}>
+                                <Ionicons name="trash-outline" size={16} color="red" />
+                            </TouchableOpacity>
+                        )}
+                    </View>
                 </View>
-            )}
+            ))}
+            </View>
+          )}
+
         </View>
     );
 };
@@ -591,6 +603,9 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   comment: {
+    // flexDirection: 'row',
+    // alignItems: 'center',
+    // marginBottom: 10,
     marginTop: 5,
     padding: 8,
     backgroundColor: '#f2f2f2',
@@ -599,11 +614,20 @@ const styles = StyleSheet.create({
   commentUsername: {
     fontWeight: 'bold',
     color: '#3B82F6', 
+    marginRight: 5,
   },
   commentText: {
     fontSize: 14,
     color: '#333',
-    marginTop: 2,
+    // marginTop: 2,
+    flex: 1,
+    // marginRight: 5,
+  },
+  commentContent: {
+    flex: 1,
+  },
+  deleteCommentButton:{
+    marginLeft: 'auto',
   },
   commentInputContainer: {
     flexDirection: 'row',
