@@ -311,6 +311,4 @@ const styles = StyleSheet.create({
     fontSize: 20,
     margin: 20
   }
-
-
 });

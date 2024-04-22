@@ -20,9 +20,6 @@ import NotificationScreen from "./screens/NotificationScreen";
 
 
 
-
-
-// const PromptContext = createContext();
 const Stack = createStackNavigator();
 
 export default function App() {
@@ -57,20 +54,23 @@ useEffect(() => {
             console.error("No prompts found in the database.");
         }
         return;
-    }
+      }
   
       let topPrompt = null;
       let maxVotes = -Infinity;
   
       promptSnapshot.forEach((doc) => {
           const data = doc.data();
-          const netVotes = data.upvotes - data.downvotes;
-  
+          const netVotes = data.upvotes.length - data.downvotes.length;
+          console.log("netVotes:", netVotes);
           if (netVotes > maxVotes) {
               maxVotes = netVotes;
               topPrompt = data.Description;
           }
       });
+
+      console.log("Top prompt:", topPrompt);
+
   
       if (isMounted && topPrompt) {
           setPrompt(topPrompt);
@@ -86,7 +86,7 @@ useEffect(() => {
           console.log(topPrompt);
           await addDoc(collection(db, "prompts"), { question: topPrompt });
       }
-  };
+    };
   
 
     getTopVotedPrompt();
@@ -113,7 +113,10 @@ useEffect(() => {
 
     const interval = setInterval(() => {
       getTopVotedPrompt();
+      console.log("updating on interval");
     }, calculateMillisecondsUntilFridayNoon());
+    // }, 5*1000);
+
 
     updateCountdown();
     return () => {
