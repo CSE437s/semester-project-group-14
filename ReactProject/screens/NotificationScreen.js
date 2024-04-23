@@ -127,8 +127,13 @@ const NotificationScreen = () => {
   }, []);
 
   const formatNotificationTime = (timestamp) => {
+    if (!timestamp || typeof timestamp.toDate !== 'function') {
+      // console.error('Invalid timestamp:', timestamp);
+      return '30 mins ago'; // or any other fallback string
+    }
     return moment(timestamp.toDate()).fromNow();
   };
+  
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
