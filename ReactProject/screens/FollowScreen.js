@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Image, View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { db, auth } from '../firebaseConfig';
-import { useNavigation,useIsFocused } from "@react-navigation/core";
-import { collection, query, doc,getDoc, where, getDocs } from 'firebase/firestore';
+import { useNavigation, useIsFocused } from "@react-navigation/core";
+import { collection, query, doc, getDoc, where, getDocs } from 'firebase/firestore';
 import { followUser, unfollowUser } from '../services/UserService';
 
 const FollowScreen = () => {
@@ -12,6 +12,10 @@ const FollowScreen = () => {
   const [loading, setLoading] = useState(false);
   const isFocused = useIsFocused();
   const [followedUserIds, setFollowedUserIds] = useState([]);
+  const featuredUsers = [
+    { id: 'test125', username: 'test125', profilePicUrl: null },
+    { id: 'ethan2', username: 'ethan2', profilePicUrl: null }
+  ];
 
   useEffect(() => {
     const fetchFollowing = async () => {
@@ -28,8 +32,23 @@ const FollowScreen = () => {
   }, [isFocused]);
 
   useEffect(() => {
+    const fetchFeaturedUsers = async () => {
+      const updatedFeaturedUsers = await Promise.all(featuredUsers.map(async user => {
+        const userQuery = query(collection(db, 'users'), where('username', '==', user.username));
+        const userSnap = await getDocs(userQuery);
+        let userDocData = user;
+        userSnap.forEach(doc => { // Should only be one doc since usernames are unique
+          userDocData = { ...user, ...doc.data(), id: doc.id }; // Use Firestore document id
+        });
+        return userDocData;
+      }));
+      setUsers(updatedFeaturedUsers);
+    };
+    
+    
+
     if (!searchTerm.trim()) {
-      setUsers([]);
+      fetchFeaturedUsers();
       setLoading(false);
       return;
     }
@@ -41,32 +60,29 @@ const FollowScreen = () => {
         where('username', '>=', searchTerm),
         where('username', '<=', searchTerm + '\uf8ff')
       );
-    
+
       try {
         const querySnapshot = await getDocs(q);
         const usersList = querySnapshot.docs
           .map(doc => ({ id: doc.id, ...doc.data() }))
           .filter(doc => doc.id !== auth.currentUser?.uid);
-    
-        const usersWithProfilePicsPromises = usersList.map(async user => {
+
+        const usersWithProfilePics = await Promise.all(usersList.map(async user => {
           const userDocRef = doc(db, "users", user.id);
           const userDocSnapshot = await getDoc(userDocRef);
           if (userDocSnapshot.exists()) {
             const userData = userDocSnapshot.data();
             return { ...user, profilePicUrl: userData.profilePicUrl };
           }
-        });
-    
-        const usersWithProfilePics = await Promise.all(usersWithProfilePicsPromises);
-    
-        setUsers(usersWithProfilePics.filter(user => user)); 
+        }));
+
+        setUsers(usersWithProfilePics);
       } catch (error) {
         console.error('Error searching users:', error);
       } finally {
         setLoading(false);
       }
     };
-    
 
     const handler = setTimeout(() => {
       search();
@@ -88,7 +104,7 @@ const FollowScreen = () => {
   return (
     <View style={styles.container}>
       <TextInput
-        autoCorrect={false} 
+        autoCorrect={false}
         autoCapitalize="none"
         style={styles.input}
         placeholder="Search users..."
@@ -98,17 +114,23 @@ const FollowScreen = () => {
       {loading ? (
         <Text style={styles.loadingText}>Loading...</Text>
       ) : (
-        <FlatList
-          data={users}
-          keyExtractor={item => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.item}>
-              <TouchableOpacity onPress={() => navigation.navigate('Profile', { userId: item.id })} style={styles.userItem}>
-                <Image
-                  source={item.profilePicUrl ? { uri: item.profilePicUrl } : require("./../assets/profile-pic.jpg")}
-                  style={styles.avatar}
-                />
-                <Text style={styles.username}>{item.username}</Text>
+        <>
+          {!searchTerm && <Text style={styles.sectionHeader}>Featured Users:</Text>}
+          <FlatList
+            data={users}
+            keyExtractor={item => item.id}
+            renderItem={({ item }) => (
+              <View style={styles.userItem}>
+                  <TouchableOpacity onPress={() => {
+                    console.log("Navigating to profile of user:", item.id); // Debug log
+                    navigation.navigate('Profile', { userId: item.id });
+                  }} style={styles.userContent}>
+                  <Image
+                    source={item.profilePicUrl ? { uri: item.profilePicUrl } : require("./../assets/profile-pic.jpg")}
+                    style={styles.avatar}
+                  />
+                  <Text style={styles.username}>{item.username}</Text>
+                </TouchableOpacity>
                 <TouchableOpacity
                   style={[
                     styles.button,
@@ -120,10 +142,10 @@ const FollowScreen = () => {
                     {followedUserIds.includes(item.id) ? 'Unfollow' : 'Follow'}
                   </Text>
                 </TouchableOpacity>
-              </TouchableOpacity>
-            </View>
-          )}
-        />
+              </View>
+            )}
+          />
+        </>
       )}
     </View>
   );
@@ -150,24 +172,20 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#CFD8DC',
-    justifyContent: 'flex-start',
     backgroundColor: 'white',
     borderRadius: 8,
     marginVertical: 5,
     paddingHorizontal: 10,
-
-    backgroundColor: "white",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-
+    justifyContent: 'space-between',
+  },
+  userContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   username: {
-    flex: 1,
     fontSize: 16,
     color: "#37474F",
+    marginLeft: 10,
   },
   button: {
     paddingHorizontal: 20,
@@ -177,19 +195,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   followButton: {
-    marginRight: 0,
-    backgroundColor: "#d1d1d1"
+    backgroundColor: "#007BFF", // Follow button is now blue
   },
   unfollowButton: {
-    backgroundColor: "#fff", // Unfollow button with darker red background
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-
+    backgroundColor: "#d1d1d1", // Unfollow button is now grey
   },
   buttonText: {
-    color: 'grey',
+    color: 'white', // Making text color white for better visibility on blue
     fontSize: 14,
   },
   loadingText: {
@@ -197,12 +209,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#37474F",
   },
-  avatar: {
-    width: 40, 
-    height: 40, 
-    borderRadius: 20, 
-    marginRight: 10,
+  sectionHeader: {
+    fontSize: 18,
+    color: '#37474F',
+    marginBottom: 10,
   },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  }
 });
 
 export default FollowScreen;
