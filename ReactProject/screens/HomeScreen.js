@@ -183,7 +183,7 @@ const HomeScreen = () => {
 
   const updateBio = async () => {
     const currentUserId = auth.currentUser?.uid;
-    if (currentUserId) {
+    if (currentUserId && bio.trim() !== '') { // Check if bio is not empty
       try {
         const userDocRef = doc(db, "users", currentUserId);
         await updateDoc(userDocRef, { bio });
@@ -191,9 +191,10 @@ const HomeScreen = () => {
         console.error("Error updating bio:", error);
       }
     } else {
-      console.error("Current user ID is not available");
+      console.log("Bio is empty or invalid");
     }
   };
+  
   
   const handleProfilePictureSelect = async () => {
     try {
