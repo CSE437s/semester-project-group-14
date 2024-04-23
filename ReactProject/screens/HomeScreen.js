@@ -508,7 +508,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 2.5,
     width: 100,
-    marginLeft: 125,
+    marginLeft: 105,
   },
   signOutButtonText: {
     color: 'grey',
