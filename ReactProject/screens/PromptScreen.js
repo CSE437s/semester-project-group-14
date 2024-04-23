@@ -353,13 +353,13 @@ const PromptScreen = ({ navigation }) => {
         <View style={styles.bottomContainer}>
           <View style={styles.voteContainer}>
             <View style={styles.voteSection}>
-              <TouchableOpacity onPress={() => handleVote(prompt.id, "upvote")} >
+              <TouchableOpacity style={styles.voteButton} onPress={() => handleVote(prompt.id, "upvote")} >
                 <Ionicons name="caret-up" size={18} color="#3B82F6" />
               </TouchableOpacity>
               <Text style={styles.voteCount}>{prompt.upvotes.length}</Text>
             </View>
             <View style={styles.voteSection}>
-              <TouchableOpacity onPress={() => handleVote(prompt.id, "downvote")}>
+              <TouchableOpacity style={styles.voteButton} onPress={() => handleVote(prompt.id, "downvote")}>
                 <Ionicons name="caret-down" size={18} color="#FF6347" />
               </TouchableOpacity>
               <Text style={styles.voteCount}>{prompt.downvotes.length}</Text>
@@ -511,10 +511,10 @@ const styles = StyleSheet.create({
   voteButton: {
     backgroundColor: '#F0F0F0', // Set a background color for the vote buttons
     borderRadius: 5,
-    padding: 3, // Reduce padding for the buttons
+    padding: 5,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 5, // Add some small margin between the buttons
+    marginRight: 10, // Add some margin between the buttons
   },
   input: {
     backgroundColor: '#F5F5F5',
