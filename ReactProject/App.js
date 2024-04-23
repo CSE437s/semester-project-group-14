@@ -62,14 +62,12 @@ useEffect(() => {
       promptSnapshot.forEach((doc) => {
           const data = doc.data();
           const netVotes = data.upvotes.length - data.downvotes.length;
-          console.log("netVotes:", netVotes);
           if (netVotes > maxVotes) {
               maxVotes = netVotes;
               topPrompt = data.Description;
           }
       });
 
-      console.log("Top prompt:", topPrompt);
 
   
       if (isMounted && topPrompt) {
@@ -113,7 +111,6 @@ useEffect(() => {
 
     const interval = setInterval(() => {
       getTopVotedPrompt();
-      console.log("updating on interval");
     }, calculateMillisecondsUntilFridayNoon());
     // }, 5*1000);
 

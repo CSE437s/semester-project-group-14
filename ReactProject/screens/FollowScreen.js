@@ -30,6 +30,7 @@ const FollowScreen = () => {
   useEffect(() => {
     if (!searchTerm.trim()) {
       setUsers([]);
+      setLoading(false);
       return;
     }
     setLoading(true);

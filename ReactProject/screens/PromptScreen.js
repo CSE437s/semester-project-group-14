@@ -307,18 +307,20 @@ const PromptScreen = ({ navigation }) => {
       {prompts.map((prompt) => (
   <View key={prompt.id} style={styles.promptContainer}>
     <Text style={styles.promptText}>{prompt.Description}</Text>
-    <View style={styles.voteContainer}>
-      <View style={styles.voteSection}>
-        <TouchableOpacity onPress={() => handleVote(prompt.id, "upvote")} >
-          <Ionicons name="caret-up" size={18} color="#3B82F6" />
-        </TouchableOpacity>
-        <Text style={styles.voteCount}>{prompt.upvotes.length}</Text>
-      </View>
-      <View style={styles.voteSection}>
-        <TouchableOpacity onPress={() => handleVote(prompt.id, "downvote")}>
-          <Ionicons name="caret-down" size={18} color="#FF6347" />
-        </TouchableOpacity>
-        <Text style={styles.voteCount}>{prompt.downvotes.length}</Text>
+    <View style={styles.bottomContainer}>
+      <View style={styles.voteContainer}>
+        <View style={styles.voteSection}>
+          <TouchableOpacity onPress={() => handleVote(prompt.id, "upvote")} >
+            <Ionicons name="caret-up" size={18} color="#3B82F6" />
+          </TouchableOpacity>
+          <Text style={styles.voteCount}>{prompt.upvotes.length}</Text>
+        </View>
+        <View style={styles.voteSection}>
+          <TouchableOpacity onPress={() => handleVote(prompt.id, "downvote")}>
+            <Ionicons name="caret-down" size={18} color="#FF6347" />
+          </TouchableOpacity>
+          <Text style={styles.voteCount}>{prompt.downvotes.length}</Text>
+        </View>
       </View>
       <TouchableOpacity onPress={() => toggleCommentsVisibility(prompt.id, auth.currentUser?.uid)} style={styles.commentButton}>
         <Ionicons name="chatbubble-outline" size={20} color="#3B82F6" />
@@ -375,10 +377,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     fontWeight: "bold",
   },
-  voteContainer: {
+  bottomContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+  },
+  voteContainer: {
+    width: 50,
   },
   voteSection: {
     flexDirection: "row",

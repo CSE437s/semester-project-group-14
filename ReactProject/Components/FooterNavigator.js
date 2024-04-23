@@ -27,7 +27,7 @@ export default function FooterNavigator() {
           } else if (route.name === 'Follow') {
             iconName = focused ? 'search' : 'search-outline';
           } else if (route.name === 'Prompt') {
-            iconName = focused ? 'help' : 'help-outline';
+            iconName = focused ? 'create' : 'create-outline';
           } else if (route.name === 'Statistics') {
             iconName = focused ? 'bar-chart' : 'bar-chart-outline'; // Adjusted icon names
           } else if (route.name === 'Home') {

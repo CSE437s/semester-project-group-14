@@ -28,12 +28,19 @@ const NotificationScreen = () => {
               const userDocRef = doc(db, "users", likeDoc.data().userId);
               const userSnapshot = await getDoc(userDocRef);
               const username = userSnapshot.exists() ? userSnapshot.data().username : "Unknown";  
+
+              const essenceRef = doc(db, `users/${userId}/essences/${essenceId}`);
+              const essenceSnapshot = await getDoc(essenceRef);
+              const essenceData = essenceSnapshot.exists() ? essenceSnapshot.data() : null;
+              const essenceResponse = essenceData ? essenceData.response : "No response";    
+
               const notification = {
                   id: likeDoc.id,
                   type: "like",
                   title: "New Like",
-                  content: `${username} liked your essence.`,
+                  content: `${username} liked your essence "${essenceResponse}"`,
                   time: formatNotificationTime(likeDoc.data().likedAt),
+                  timestamp: likeDoc.data().likedAt,
                   userId:likeDoc.data().userId,
 
               };
@@ -53,7 +60,7 @@ const NotificationScreen = () => {
               ];
               return updatedNotifications;
           });
-          
+          console.log(notifications);
   
         });
         
@@ -84,6 +91,7 @@ const NotificationScreen = () => {
                   title: "New Comment",
                   content: `${username} commented ${commentContent}.`,
                   time: formatNotificationTime(commentDoc.data().createdAt),
+                  timestamp: commentDoc.data().createdAt,
                   userId:commentDoc.data().userId,
                 };
               } else {
@@ -98,6 +106,8 @@ const NotificationScreen = () => {
                 ...prevNotifications,
                 ...filteredCommentsNotifications,
               ];
+
+              
               return updatedNotifications;
             });
             
@@ -123,7 +133,8 @@ const NotificationScreen = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {notifications.map((notification, index) => (
+      {notifications.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate())
+        .map((notification, index) => (
         <View key={`notification-${index}`} style={styles.notification}>
           <View style={styles.notificationHeader}>
             <Text style={styles.notificationTitle}>{notification.title}</Text>
@@ -131,7 +142,7 @@ const NotificationScreen = () => {
           </View>
           <View style={styles.notificationContent}>
             {notification.type === "like" ? (
-              <Ionicons name="heart-outline" size={24} color="#FF5733" />
+              <Ionicons name="heart-outline" size={24} color="#4A90E2" />
             ) : (
               <Ionicons name="chatbubble-outline" size={24} color="#4A90E2" />
             )}

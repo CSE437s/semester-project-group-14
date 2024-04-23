@@ -132,11 +132,11 @@ const HomeScreen = () => {
         <Text style={styles.essenceResponse}>{response}</Text>
         <View style={styles.iconContainer}>
           <View style={styles.iconItem}>
-            <Ionicons name="heart-outline" size={20} color="#3B82F6" />
+            <Ionicons name="heart-outline" size={20} color="grey" />
             <Text style={styles.iconText}>{likes ? likes.length : 0}</Text>
           </View>
           <View style={styles.iconItem}>
-            <Ionicons name="chatbubble-outline" size={20} color="#3B82F6" />
+            <Ionicons name="chatbubble-outline" size={20} color="grey" />
             <Text style={styles.iconText}>{comments ? comments.length : 0}</Text>
           </View>
         </View>
@@ -212,6 +212,12 @@ const HomeScreen = () => {
         aspect: [1, 1],
         quality: 1,
       });
+
+      if (pickerResult.canceled) {
+        // Handle the case when the user cancels the operation
+        console.log('User canceled profile picture selection.');
+        return;
+      }  
   
       if (!pickerResult.cancelled) {
         const uri = pickerResult.assets[0].uri;
@@ -434,6 +440,7 @@ const styles = StyleSheet.create({
     },
     iconText: {
       marginLeft: 5,
+      color: "grey"
     },
     iconContainer: {
       flexDirection: "row",
