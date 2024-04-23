@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useContext } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, ScrollView } from "react-native";
 import { db, auth } from "../firebaseConfig";
-import { collection, getDocs, getDoc, doc, addDoc, updateDoc, onSnapshot, increment } from "firebase/firestore";
+import { collection, getDocs, getDoc, doc, addDoc, updateDoc, deleteDoc, onSnapshot, increment } from "firebase/firestore";
 import { Ionicons } from '@expo/vector-icons'; // Import Ionicons
 import PromptContext from "../contexts/PromptContext";
 import moment from 'moment';
+
 
 const PromptScreen = ({ navigation }) => {
 
@@ -77,12 +78,15 @@ const PromptScreen = ({ navigation }) => {
 
 
   const toggleCommentsVisibility = async (promptId, postUserId) => {
-    setShowComments(prev => ({ ...prev, [promptId]: !prev[promptId] }));
-  
     if (!showComments[promptId]) {
-      await fetchCommentsForEssence(promptId,postUserId);
+      // Only fetch comments if they haven't been fetched before
+      if (!comments[promptId]) {
+        await fetchCommentsForEssence(promptId, postUserId);
+      }
     }
+    setShowComments(prev => ({ ...prev, [promptId]: !prev[promptId] }));
   };
+  
   
   
   
@@ -111,7 +115,8 @@ const PromptScreen = ({ navigation }) => {
         const userDocRef = doc(db, "users", commentData.userId);
         const userSnapshot = await getDoc(userDocRef);
         const username = userSnapshot.exists() ? userSnapshot.data().username : "Unknown";
-        commentsList.push({ ...commentData, username });
+        console.log(username);
+        commentsList.push({ id: docSnapshot.id, ...commentData, username });
       }
       setComments(prev => ({ ...prev, [promptId]: commentsList }));
     } catch (error) {
@@ -122,23 +127,41 @@ const PromptScreen = ({ navigation }) => {
   
   
   
+  
   const handlePostComment = async (promptId, postUserId) => {
     const userId = auth.currentUser?.uid;
     const newCommentText = commentText[promptId] || '';
   
     if (newCommentText.trim() && userId) {
       try {
-        await addDoc(collection(db, `potentialPrompts/${promptId}/comments`), {
+        const commentRef = await addDoc(collection(db, `potentialPrompts/${promptId}/comments`), {
           userId,
           text: newCommentText,
           createdAt: new Date(),
         });
   
         console.log("Comment added");
-        fetchCommentsForEssence(promptId);
-        setCommentText(prevState => ({ ...prevState, [promptId]: '' }));
   
-        fetchCommentsForEssence(promptId, postUserId);
+        // Fetch the username for the newly posted comment
+        const userDocRef = doc(db, "users", userId);
+        const userSnapshot = await getDoc(userDocRef);
+        const username = userSnapshot.exists() ? userSnapshot.data().username : "Unknown";
+  
+        // Update the comments state with the new comment and its username
+        setComments(prevComments => ({
+          ...prevComments,
+          [promptId]: [
+            ...(prevComments[promptId] || []),
+            {
+              userId,
+              text: newCommentText,
+              createdAt: new Date(),
+              username: username // Include the username in the comment object
+            }
+          ]
+        }));
+  
+        setCommentText(prevState => ({ ...prevState, [promptId]: '' }));
       } catch (error) {
         console.error("Error adding comment: ", error);
         alert("Failed to post comment. Please try again.");
@@ -147,6 +170,7 @@ const PromptScreen = ({ navigation }) => {
       alert("Comment cannot be empty.");
     }
   };
+  
   
   const handleVote = async (promptId, voteType) => {
     const userId = auth.currentUser?.uid;
@@ -203,6 +227,24 @@ const PromptScreen = ({ navigation }) => {
   }, []);
   
   
+  const handleDeleteComment = async (commentId, promptId) => {
+    try {
+      // Delete the comment from Firestore
+      await deleteDoc(doc(db, `potentialPrompts/${promptId}/comments/${commentId}`));
+      console.log(`Deleted comment: ${commentId} from prompt: ${promptId}`);
+  
+      // Update the comments state
+      setComments(prevComments => ({
+        ...prevComments,
+        [promptId]: prevComments[promptId] ? prevComments[promptId].filter(comment => comment.id !== commentId) : []
+      }));
+      
+  
+    } catch (error) {
+      console.error("Error deleting comment: ", error);
+      alert("Failed to delete comment. Please try again.");
+    }
+  };
   
   
   const handleAddPotentialPrompt = async () => {
@@ -306,27 +348,28 @@ const PromptScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
       {prompts.map((prompt) => (
-  <View key={prompt.id} style={styles.promptContainer}>
-    <Text style={styles.promptText}>{prompt.Description}</Text>
-    <View style={styles.bottomContainer}>
-      <View style={styles.voteContainer}>
-        <View style={styles.voteSection}>
-          <TouchableOpacity style={styles.voteButton} onPress={() => handleVote(prompt.id, "upvote")} >
-            <Ionicons name="caret-up" size={18} color="#3B82F6" />
+      <View key={prompt.id} style={styles.promptContainer}>
+        <Text style={styles.promptText}>{prompt.Description}</Text>
+        <View style={styles.bottomContainer}>
+          <View style={styles.voteContainer}>
+            <View style={styles.voteSection}>
+              <TouchableOpacity onPress={() => handleVote(prompt.id, "upvote")} >
+                <Ionicons name="caret-up" size={18} color="#3B82F6" />
+              </TouchableOpacity>
+              <Text style={styles.voteCount}>{prompt.upvotes.length}</Text>
+            </View>
+            <View style={styles.voteSection}>
+              <TouchableOpacity onPress={() => handleVote(prompt.id, "downvote")}>
+                <Ionicons name="caret-down" size={18} color="#FF6347" />
+              </TouchableOpacity>
+              <Text style={styles.voteCount}>{prompt.downvotes.length}</Text>
+            </View>
+          </View>
+          <TouchableOpacity onPress={() => toggleCommentsVisibility(prompt.id, auth.currentUser?.uid)} style={styles.commentButton}>
+            <Ionicons name="chatbubble-outline" size={20} color="#3B82F6" />
+            {comments[prompt.id] && <Text style={styles.commentCount}>{comments[prompt.id].length}</Text>}
           </TouchableOpacity>
-          <Text style={styles.voteCount}>{prompt.upvotes.length}</Text>
-        </View>
-        <View style={styles.voteSection}>
-          <TouchableOpacity style={styles.voteButton} onPress={() => handleVote(prompt.id, "downvote")}>
-            <Ionicons name="caret-down" size={18} color="#FF6347" />
-          </TouchableOpacity>
-          <Text style={styles.voteCount}>{prompt.downvotes.length}</Text>
-        </View>
       </View>
-      <TouchableOpacity onPress={() => toggleCommentsVisibility(prompt.id, auth.currentUser?.uid)} style={styles.commentButton}>
-        <Ionicons name="chatbubble-outline" size={20} color="#3B82F6" />
-      </TouchableOpacity>
-    </View>
     {showComments[prompt.id] && (
       <View style={styles.commentsSection}>
   <View style={styles.commentInputContainer}>
@@ -343,14 +386,20 @@ const PromptScreen = ({ navigation }) => {
     </TouchableOpacity>
   </View>
   {comments[prompt.id] && comments[prompt.id].map((comment, index) => (
-    <View key={index} style={styles.comment}>
-      <View style={styles.commentHeader}>
-        <Text style={styles.commentUsername}>{comment.username}</Text>
-        <Text style={styles.timestamp}>{moment(comment.createdAt.toDate()).fromNow()}</Text> 
-      </View>
-      <Text style={styles.commentText}>{comment.text}</Text>
+  <View key={index} style={styles.comment}>
+    <View style={styles.commentHeader}>
+      <Text style={styles.commentUsername}>{comment.username}</Text>
+      <Text style={styles.timestamp}>
+        {comment.createdAt instanceof Date ? moment(comment.createdAt).fromNow() : null}
+      </Text>
+      <TouchableOpacity onPress={() => handleDeleteComment(comment.id, prompt.id)}>
+        <Ionicons name="trash-outline" size={18} color="red" />
+      </TouchableOpacity>
     </View>
-  ))}
+    <Text style={styles.commentText}>{comment.text}</Text>
+  </View>
+))}
+
 </View>
 
     )}
