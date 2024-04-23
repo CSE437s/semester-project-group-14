@@ -24,53 +24,52 @@ const NotificationScreen = () => {
           const likesRef = collection(db, `users/${userId}/essences/${essenceId}/likes`);
           const likesQuery = query(likesRef);
           return onSnapshot(likesQuery, async (likesSnapshot) => {
-            const likesNotifications = await Promise.all(likesSnapshot.docs.map(async (likeDoc) => {
-              const userDocRef = doc(db, "users", likeDoc.data().userId);
-              const userSnapshot = await getDoc(userDocRef);
-              const username = userSnapshot.exists() ? userSnapshot.data().username : "Unknown";  
-
-              const essenceRef = doc(db, `users/${userId}/essences/${essenceId}`);
-              const essenceSnapshot = await getDoc(essenceRef);
-              const essenceData = essenceSnapshot.exists() ? essenceSnapshot.data() : null;
-              const essenceResponse = essenceData ? essenceData.response : "No response";    
-
-              const notification = {
-                  id: likeDoc.id,
-                  type: "like",
-                  title: "New Like",
-                  content: `${username} liked your essence "${essenceResponse}"`,
-                  time: formatNotificationTime(likeDoc.data().likedAt),
-                  timestamp: likeDoc.data().likedAt,
-                  userId:likeDoc.data().userId,
-
-              };
-              if (notification.content.trim() !== "") {
-                  return notification;
-              } else {
-                  return null;
-              }
-          }));
-          
-          const filteredLikesNotifications = likesNotifications.filter(notification => notification !== null);
-          
-          setNotifications((prevNotifications) => {
-              const updatedNotifications = [
+            try {
+              const likesNotifications = await Promise.all(likesSnapshot.docs.map(async (likeDoc) => {
+                if (!likeDoc.exists || !likeDoc.data()) return null; // Ensure the document exists and has data
+                const userData = likeDoc.data();
+                if (!userData.userId) return null; // Check if userId exists
+    
+                const userDocRef = doc(db, "users", userData.userId);
+                const userSnapshot = await getDoc(userDocRef);
+                const username = userSnapshot.exists() ? userSnapshot.data().username : "Unknown";
+    
+                const essenceRef = doc(db, `users/${userId}/essences/${essenceId}`);
+                const essenceSnapshot = await getDoc(essenceRef);
+                if (!essenceSnapshot.exists()) return null; // Check if essence exists
+    
+                const essenceData = essenceSnapshot.data();
+                const essenceResponse = essenceData ? essenceData.response : "No response";
+    
+                return {
+                    id: likeDoc.id,
+                    type: "like",
+                    title: "New Like",
+                    content: `${username} liked your essence "${essenceResponse}"`,
+                    time: formatNotificationTime(userData.likedAt),
+                    timestamp: userData.likedAt,
+                    userId: userData.userId,
+                };
+              }));
+    
+              const filteredLikesNotifications = likesNotifications.filter(notification => notification !== null);
+              setNotifications((prevNotifications) => [
                   ...prevNotifications,
                   ...filteredLikesNotifications,
-              ];
-              return updatedNotifications;
+              ]);
+              console.log(filteredLikesNotifications);
+            } catch (error) {
+              console.error("Error processing likes notifications:", error);
+            }
           });
-          console.log(notifications);
-  
         });
-        
-        });
-
+    
         return () => {
-          unsubscribeLikes.forEach((unsubscribe) => unsubscribe());
+          likesPromises.forEach((unsubscribe) => unsubscribe());
         };
       }
     );
+    
     const unsubscribeComments = onSnapshot(
       collection(db, `users/${userId}/essences`),
       (snapshot) => {
@@ -89,7 +88,7 @@ const NotificationScreen = () => {
                   id: commentDoc.id,
                   type: "comment",
                   title: "New Comment",
-                  content: `${username} commented ${commentContent}.`,
+                  content: `${username} commented "${commentContent}".`,
                   time: formatNotificationTime(commentDoc.data().createdAt),
                   timestamp: commentDoc.data().createdAt,
                   userId:commentDoc.data().userId,

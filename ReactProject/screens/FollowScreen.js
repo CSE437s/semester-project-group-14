@@ -14,7 +14,10 @@ const FollowScreen = () => {
   const [followedUserIds, setFollowedUserIds] = useState([]);
   const featuredUsers = [
     { id: 'ethan', username: 'ethan', profilePicUrl: null },
-    { id: 'kyle', username: 'coolkyle1', profilePicUrl: null }
+    { id: 'coolkyle1', username: 'coolkyle1', profilePicUrl: null },
+    { id: 'sam', username: 'sam', profilePicUrl: null },
+    { id: 'test125', username: 'test125', profilePicUrl: null },
+
   ];
 
   useEffect(() => {
