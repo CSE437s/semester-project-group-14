@@ -23,7 +23,7 @@ import moment from 'moment';
 const jaroSimilarity = (s1, s2) => {
   if (s1 === s2) return 1.0;
   
-  const s1Length = s1.length;
+  const s1Length = s1 ? s1.length : 0;
   const s2Length = s2.length;
   
   const matchDistance = Math.floor(Math.max(s1Length, s2Length) / 2) - 1;
@@ -68,16 +68,59 @@ const jaroSimilarity = (s1, s2) => {
   return jaroSimilarity;
 };
 
+const findTop5Responses = (feedData) => {
+  const topResponses = []; // Array to store the top 5 responses
+  const threshold = 0.85; // Jaro similarity threshold
+
+  feedData.forEach((response) => {
+    let matched = false;
+
+    // Check if the response matches any existing top response
+    topResponses.forEach((topResponse) => {
+      const similarityScore = jaroSimilarity(response, topResponse.response);
+      if (similarityScore > threshold) {
+        // If the response is similar to an existing top response, increment its count
+        topResponse.count++;
+        matched = true;
+      }
+    });
+
+    if (!matched) {
+      // If the response doesn't match any existing top response
+      if (topResponses.length < 5) {
+        // If there's space in the top responses array, add the response
+        topResponses.push({ response: response, count: 1 });
+      } else {
+        // If the top responses array is full, find the response with the lowest count
+        let minCountIndex = 0;
+        for (let i = 1; i < topResponses.length; i++) {
+          if (topResponses[i].count < topResponses[minCountIndex].count) {
+            minCountIndex = i;
+          }
+        }
+        // Replace the response with the lowest count if the new response has a higher count
+        if (topResponses[minCountIndex].count < 1) {
+          topResponses[minCountIndex] = { response: response, count: 1 };
+        }
+      }
+    }
+  });
+
+  // Sort the top responses array by count in descending order
+  topResponses.sort((a, b) => b.count - a.count);
+
+  return topResponses.slice(0, 5); // Return the top 5 responses
+};
+
+
 
 const StatisticsScreen = () => {
-  const [input1, setInput1] = useState('');
-  const [input2, setInput2] = useState('');
-  const [similarityScore, setSimilarityScore] = useState(null);
   const [mostRecentEssence, setMostRecentEssence] = useState(null);
   const [userResponse, setUserResponse] = useState(null);
   const [prompt] = useContext(PromptContext);
   const [loading, setLoading] = useState(true);
   const [feedData, setFeedData] = useState([]);
+  const [topResponses, setTopResponses] = useState([]);
   const userId = auth.currentUser?.uid;
   let navigation = useNavigation();
 
@@ -133,7 +176,7 @@ const StatisticsScreen = () => {
                   numComments,
                   liked,
                   profilePicUrl, 
-                  response: essenceData.response
+                  response: essenceData.response ||""
                 };
               } else {
                 return null;
@@ -142,11 +185,14 @@ const StatisticsScreen = () => {
     
             const essencesWithData = await Promise.all(essencesDataPromises);
             const filteredEssences = essencesWithData.filter(essence => essence !== null && jaroSimilarity(userResponse,essence.response) > 0.85);
-    
+            
+            const responsesArray = essencesWithData.filter(essence => essence != null).map(essence => essence.response);
+            responsesArray.push(userResponse);
+            console.log(responsesArray);
+            setTopResponses(findTop5Responses(responsesArray));
+
             filteredEssences.sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate());
 
-            
-    
             setFeedData(filteredEssences);
           });
     
@@ -164,7 +210,6 @@ const StatisticsScreen = () => {
         setLoading(false);
       }
     };
-    
     
     fetchData();
   }, [prompt, userResponse]);
@@ -187,16 +232,6 @@ const StatisticsScreen = () => {
     };
     fetchPromptAndCheckResponse();
   }, [prompt]);
-
-
-
-  const calculateSimilarity = () => {
-    // Jaro Similarity Algorithm
-
-    // Calculate Jaro similarity score
-    const score = jaroSimilarity(input1, input2);
-    setSimilarityScore(score);
-  };
 
   const renderItem = ({ item }) => {
     const timeAgo = moment(item.createdAt.toDate()).fromNow();
@@ -224,21 +259,33 @@ const StatisticsScreen = () => {
   
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>These friends had similar answers:</Text>
-      {similarityScore !== null &&
-        <Text style={{ margin: 10 }}>
-          Similarity Score: {similarityScore.toFixed(2)}
-        </Text>
-      }
-
-      {loading ? (
-        <ActivityIndicator size="large" color="#3B82F6" />
-        ) : (
+        <>
+          <Text style={styles.title}>Top 5 Responses:</Text>
           <FlatList
-            data={feedData}
-            renderItem={renderItem}
-            keyExtractor={item => item.id}
+            data={topResponses}
+            renderItem={({ item, index }) => (
+              <View style={styles.responseItem}>
+                <Text>{index + 1}. {item.response} (Count: {item.count})</Text>
+              </View>
+            )}
+            keyExtractor={(item, index) => index.toString()}
           />
+        </>
+      {feedData.length > 0 ? (
+        <>
+          <Text style={styles.title}>These friends had similar answers:</Text>
+            {loading ? (
+              <ActivityIndicator size="large" color="#3B82F6" />
+              ) : (
+                <FlatList
+                  data={feedData}
+                  renderItem={renderItem}
+                  keyExtractor={item => item.id}
+                />
+            )}
+        </>
+      ) : (
+        <View></View>
       )}
     </View>
   );
@@ -309,6 +356,11 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    margin: 20
-  }
+    marginVertical: 10,
+  },
+  responseItem: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
+  },
 });

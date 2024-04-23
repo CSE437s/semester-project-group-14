@@ -133,7 +133,7 @@ useEffect(() => {
     <PromptContext.Provider value={ [prompt, setPrompt, isPromptAnswered, setIsPromptAnswered] }>
        <TamaguiProvider config={tamaguiConfig}>
          <NavigationContainer>
-           <Stack.Navigator>
+           <Stack.Navigator initialRouteName="Main">
              {user ? (
               <>
                 <Stack.Screen name="Main" component={FooterNavigator} options={{ headerShown: false }} />
