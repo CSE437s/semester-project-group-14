@@ -31,89 +31,91 @@ export default function FeedScreen() {
   const insets = useSafeAreaInsets();
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
-      try {
-        if (!prompt) {
-          setLoading(false);
-          return;
-        }
-    
-        const currentUserId = auth.currentUser?.uid;
-    
-        const followingRef = collection(db, "users", currentUserId, "following");
-        const unsubscribeFollowing = onSnapshot(followingRef, async (snapshot) => {
-          const followingIds = snapshot.docs.map(doc => doc.id);
-    
-          const essencesRef = collectionGroup(db, "essences");
-          const q = query(essencesRef, where("prompt", "==", prompt));
-          const unsubscribeEssences = onSnapshot(q, async (querySnapshot) => {
-            const essencesDataPromises = querySnapshot.docs.map(async (essenceDoc) => {
-              const essenceData = essenceDoc.data();
-              const likesQuerySnapshot = await getDocs(collection(db, `users/${essenceData.userId}/essences/${essenceDoc.id}/likes`));
-              const numLikes = likesQuerySnapshot.size;
-              const commentsQuerySnapshot = await getDocs(collection(db, `users/${essenceData.userId}/essences/${essenceDoc.id}/comments`));
-              const numComments = commentsQuerySnapshot.size;
-              const likesRef = collection(db, `users/${essenceData.userId}/essences/${essenceDoc.id}/likes`);
-              const querySnapshot = await getDocs(
-                query(likesRef, where("userId", "==", currentUserId))
-              );
-    
-              const liked = !querySnapshot.empty;
-    
-              let username = "USER";
-              let profilePicUrl = ""; 
-              if (essenceData.userId) {
-                const userDocRef = doc(db, "users", essenceData.userId);
-                const userDocSnapshot = await getDoc(userDocRef);
-                if (userDocSnapshot.exists()) {
-                  const userData = userDocSnapshot.data();
-                  username = userData.username || "USER";
-                  profilePicUrl = userData.profilePicUrl || ""; 
-                }
-              }
-    
-              if (followingIds.includes(essenceData.userId)) {
-                return {
-                  id: essenceDoc.id,
-                  ...essenceData,
-                  username,
-                  numLikes,
-                  numComments,
-                  liked,
-                  profilePicUrl, 
+        setLoading(true);
+        try {
+            if (!prompt) {
+                setLoading(false);
+                return;
+            }
+
+            const currentUserId = auth.currentUser?.uid;
+
+            const followingRef = collection(db, "users", currentUserId, "following");
+            const unsubscribeFollowing = onSnapshot(followingRef, async (snapshot) => {
+                const followingIds = snapshot.docs.map(doc => doc.id);
+
+                const essencesRef = collectionGroup(db, "essences");
+                const q = query(essencesRef, where("prompt", "==", prompt));
+                const unsubscribeEssences = onSnapshot(q, async (querySnapshot) => {
+                    const essencesDataPromises = querySnapshot.docs.map(async (essenceDoc) => {
+                        const essenceData = essenceDoc.data();
+                        const likesQuerySnapshot = await getDocs(collection(db, `users/${essenceData.userId}/essences/${essenceDoc.id}/likes`));
+                        const numLikes = likesQuerySnapshot.size;
+                        const commentsQuerySnapshot = await getDocs(collection(db, `users/${essenceData.userId}/essences/${essenceDoc.id}/comments`));
+                        const numComments = commentsQuerySnapshot.size;
+                        const likesRef = collection(db, `users/${essenceData.userId}/essences/${essenceDoc.id}/likes`);
+                        const querySnapshot = await getDocs(
+                            query(likesRef, where("userId", "==", currentUserId))
+                        );
+
+                        const liked = !querySnapshot.empty;
+
+                        let username = "USER";
+                        let profilePicUrl = "";
+                        if (essenceData.userId) {
+                            const userDocRef = doc(db, "users", essenceData.userId);
+                            const userDocSnapshot = await getDoc(userDocRef);
+                            if (userDocSnapshot.exists()) {
+                                const userData = userDocSnapshot.data();
+                                username = userData.username || "USER";
+                                profilePicUrl = userData.profilePicUrl || "";
+                            }
+                        }
+
+                        if (followingIds.includes(essenceData.userId)) {
+                            return {
+                                id: essenceDoc.id,
+                                ...essenceData,
+                                username,
+                                numLikes,
+                                numComments,
+                                liked,
+                                profilePicUrl,
+                            };
+                        } else {
+                            return null;
+                        }
+                    });
+
+                    const essencesWithData = await Promise.all(essencesDataPromises);
+                    const filteredEssences = essencesWithData.filter(essence => essence !== null);
+
+                    filteredEssences.sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate());
+
+                    setFeedData(filteredEssences);
+                    setTotalComments(filteredEssences.reduce((acc, essence) => ({
+                        ...acc,
+                        [essence.id]: essence.numComments
+                    }), {}));
+                });
+
+                return () => {
+                    unsubscribeEssences();
                 };
-              } else {
-                return null;
-              }
             });
-    
-            const essencesWithData = await Promise.all(essencesDataPromises);
-            const filteredEssences = essencesWithData.filter(essence => essence !== null);
-    
-            filteredEssences.sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate());
-    
-            setFeedData(filteredEssences);
-          });
-    
-          return () => {
-            unsubscribeEssences();
-          };
-        });
-    
-        return () => {
-          unsubscribeFollowing();
-        };
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setLoading(false);
-      }
+
+            return () => {
+                unsubscribeFollowing();
+            };
+        } catch (error) {
+            console.error("Error fetching data:", error);
+        } finally {
+            setLoading(false);
+        }
     };
-    
-    
-  
+
     fetchData();
-  }, [prompt]);
+}, [prompt]);
 
 
   useEffect(() => {
@@ -263,7 +265,7 @@ export default function FeedScreen() {
   const handlePostComment = async (essenceId, postUserId) => {
     const userId = auth.currentUser?.uid;
     const newCommentText = commentText[essenceId] || '';
-  
+
     if (newCommentText.trim() && userId) {
         try {
             const commentRef = await addDoc(collection(db, `users/${postUserId}/essences/${essenceId}/comments`), {
@@ -272,12 +274,25 @@ export default function FeedScreen() {
                 createdAt: new Date(),
             });
 
-            const commentId = commentRef.id; // Get the auto-generated comment ID
+            console.log("Comment added with ID: ", commentRef.id);
 
-            console.log("Comment added with ID: ", commentId);
+            // Increment numComments in the feedData state
+            const updatedFeedData = feedData.map(essence => {
+                if (essence.id === essenceId) {
+                    return { ...essence, numComments: essence.numComments + 1 };
+                }
+                return essence;
+            });
+            setFeedData(updatedFeedData);
+            
+            // Increment numComments in the totalComments state
+            setTotalComments(prevTotalComments => ({
+                ...prevTotalComments,
+                [essenceId]: (prevTotalComments[essenceId] || 0) + 1
+            }));
 
-            fetchCommentsForEssence(essenceId, postUserId); // Fetch comments after adding the new one
-            setCommentText(prevState => ({ ...prevState, [essenceId]: '' }));
+            setCommentText(prevState => ({ ...prevState, [essenceId]: '' })); // Clear the input field
+            fetchCommentsForEssence(essenceId, postUserId); // Optionally fetch comments to update the list
         } catch (error) {
             console.error("Error adding comment: ", error);
             alert("Failed to post comment. Please try again.");
@@ -287,22 +302,25 @@ export default function FeedScreen() {
     }
 };
 
+
+
   
   
 
 const fetchCommentsForEssence = async (essenceId, postUserId) => {
   try {
       const commentsSnapshot = await getDocs(collection(db, `users/${postUserId}/essences/${essenceId}/comments`));
-      const commentsList = [];
-      for (const docSnapshot of commentsSnapshot.docs) {
+      const commentsList = await Promise.all(commentsSnapshot.docs.map(async (docSnapshot) => {
           const commentData = docSnapshot.data();
-          const commentId = docSnapshot.id; // Get the comment ID
           const userDocRef = doc(db, "users", commentData.userId);
           const userSnapshot = await getDoc(userDocRef);
-          const username = userSnapshot.exists() ? userSnapshot.data().username : "Unknown";
-          commentsList.push({ id: commentId, ...commentData, username }); // Include the comment ID in the comment data
-          console.log(commentId);
-      }
+          const username = userSnapshot.exists() ? userSnapshot.data().username : "Unknown User"; // Handle case where user data might not exist
+          return {
+              id: docSnapshot.id, 
+              ...commentData, 
+              username, // Add the username to the comment data
+          };
+      }));
       setComments(prev => ({ ...prev, [essenceId]: commentsList }));
   } catch (error) {
       console.error("Error fetching comments: ", error);
@@ -310,35 +328,37 @@ const fetchCommentsForEssence = async (essenceId, postUserId) => {
 };
 
 
+
+
   
   const renderItem = ({ item }) => {
     const timeAgo = moment(item.createdAt.toDate()).fromNow();
     const currentUserId = auth.currentUser?.uid;
 
-    const handleDeleteComment = async (commentId) => {
+    const handleDeleteComment = async (commentId, essenceId, userId) => {
       try {
           // Delete the comment from Firestore
-          await deleteDoc(doc(db, `users/${item.userId}/essences/${item.id}/comments/${commentId}`));
-          // console.log(item.userId);
-          // console.log(item.id);
-          // console.log(commentId);
-  
+          await deleteDoc(doc(db, `users/${userId}/essences/${essenceId}/comments/${commentId}`));
+          console.log(`Deleted comment: ${commentId} from essence: ${essenceId}`);
+
           // Update the total number of comments for the essence
-          setTotalComments((prevTotalComments) => ({
+          setTotalComments(prevTotalComments => ({
               ...prevTotalComments,
-              [item.id]: prevTotalComments[item.id] - 1
-            }));
-  
-          // Remove the deleted comment from the comments state
-          setComments((prevComments) => ({
-              ...prevComments,
-              [item.id]: prevComments[item.id].filter((comment) => comment.id !== commentId)
+              [essenceId]: Math.max(0, prevTotalComments[essenceId] - 1) // Ensuring no negative numbers
           }));
+
+          // Remove the deleted comment from the comments state
+          setComments(prevComments => ({
+              ...prevComments,
+              [essenceId]: prevComments[essenceId].filter(comment => comment.id !== commentId)
+          }));
+
       } catch (error) {
           console.error("Error deleting comment: ", error);
           alert("Failed to delete comment. Please try again.");
       }
   };
+  
   
 
     return (
@@ -365,7 +385,7 @@ const fetchCommentsForEssence = async (essenceId, postUserId) => {
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => toggleCommentsVisibility(item.id, item.userId)} style={styles.commentButton}>
                     <Ionicons name="chatbubble-outline" size={20} color="#3B82F6" />
-                    <Text style={styles.likeCount}>{item.numComments}</Text>
+                    <Text style={styles.likeCount}>{totalComments[item.id]}</Text>
                 </TouchableOpacity>
             </View>
             {showComments[item.id] && (
@@ -391,8 +411,9 @@ const fetchCommentsForEssence = async (essenceId, postUserId) => {
                     <View style={styles.commentContent}>
                         <Text style={styles.commentText}>{comment.text}</Text>
                         {comment.userId === currentUserId && (
-                            <TouchableOpacity onPress={() => handleDeleteComment(comment.id)} style={styles.deleteCommentButton}>
-                                <Ionicons name="trash-outline" size={16} color="red" />
+                            // Make sure to pass `essenceId` when calling handleDeleteComment
+                            <TouchableOpacity onPress={() => handleDeleteComment(comment.id, item.id, item.userId)} style={styles.deleteCommentButton}>
+                              <Ionicons name="trash-outline" size={16} color="red" />
                             </TouchableOpacity>
                         )}
                     </View>
