@@ -454,7 +454,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#c0e0ed",
+    backgroundColor: "#e6e6e6",
   },
   card: {
     backgroundColor: "white",
@@ -549,19 +549,22 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   displayContainer: {
-    padding: 20,
     backgroundColor: "white",
-    marginBottom: 10,
-    borderRadius: 10,
+    borderRadius: 8,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   promptDisplay: {
     fontSize: 18,
-    marginBottom: 10,
+    margin: 10,
   },
   responseDisplay: {
     padding: 10,
-    backgroundColor: "#F0F0F0",
-    borderRadius: 10,
+    backgroundColor: "#f5f5f5",
   },
   likeButton: {
     display: "flex",

@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#c0e0ed',
+    backgroundColor: '#e6e6e6',
   },
   header: {
     flexDirection: "row",
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 2,
-    backgroundColor: '#c2ecfc', 
+    // backgroundColor: '#ccc', 
     marginVertical: 20,
   },
   profilePicture: {
@@ -395,9 +395,13 @@ const styles = StyleSheet.create({
       color: "#666",
     },
     signOutButton: {
-      backgroundColor: "#FF7F7F",
-      borderRadius: 20,
-      padding: 10,
+      backgroundColor: "#d1d1d1",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      borderRadius: 5,
+      padding: 8,
       justifyContent: "center",
       alignItems: "center",
       marginTop: 2.5,
@@ -405,9 +409,8 @@ const styles = StyleSheet.create({
       marginLeft: 125,
     },
     signOutButtonText: {
-      color: "#fff",
+      color: 'grey',
       fontSize: 16,
-      fontWeight: "bold",
     },
     statsContainer: {
       flexDirection: 'row',

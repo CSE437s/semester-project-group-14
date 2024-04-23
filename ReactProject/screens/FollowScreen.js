@@ -102,7 +102,7 @@ const FollowScreen = () => {
           data={users}
           keyExtractor={item => item.id}
           renderItem={({ item }) => (
-            <View style={styles}>
+            <View style={styles.item}>
               <TouchableOpacity onPress={() => navigation.navigate('Profile', { userId: item.id })} style={styles.userItem}>
                 <Image
                   source={item.profilePicUrl ? { uri: item.profilePicUrl } : require("./../assets/profile-pic.jpg")}
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#c0e0ed',
+    backgroundColor: '#e6e6e6',
   },
   input: {
     height: 50,
@@ -155,6 +155,14 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginVertical: 5,
     paddingHorizontal: 10,
+
+    backgroundColor: "white",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+
   },
   username: {
     flex: 1,
@@ -164,21 +172,25 @@ const styles = StyleSheet.create({
   button: {
     paddingHorizontal: 20,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: 5,
     justifyContent: 'center',
     alignItems: 'center',
   },
   followButton: {
     marginRight: 0,
-    backgroundColor: "#1E88E5", // Follow button with blue background
+    backgroundColor: "#d1d1d1"
   },
   unfollowButton: {
-    backgroundColor: "#E53935", // Unfollow button with darker red background
+    backgroundColor: "#fff", // Unfollow button with darker red background
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+
   },
   buttonText: {
-    color: 'white',
+    color: 'grey',
     fontSize: 14,
-    fontWeight: 'bold',
   },
   loadingText: {
     textAlign: 'center',

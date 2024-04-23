@@ -264,8 +264,8 @@ const StatisticsScreen = () => {
           <FlatList
             data={topResponses}
             renderItem={({ item, index }) => (
-              <View style={styles.responseItem}>
-                <Text>{index + 1}. {item.response} (Count: {item.count})</Text>
+              <View style={styles.card}>
+                <Text>{index + 1}. {item.response} </Text>
               </View>
             )}
             keyExtractor={(item, index) => index.toString()}
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#c0e0ed",
+    backgroundColor: "#e6e6e6",
   },
   card: {
     backgroundColor: "white",

@@ -63,7 +63,7 @@ const FollowersScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#c0e0ed', 
+    backgroundColor: '#e6e6e6', 
     padding: 20,
   },
   loadingText: {
@@ -82,6 +82,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginVertical: 5,
     paddingHorizontal: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   avatar: {
     width: 40, 

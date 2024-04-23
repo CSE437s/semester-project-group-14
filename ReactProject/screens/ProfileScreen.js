@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#c0e0ed",
+    backgroundColor: "#e6e6e6",
   },
   header: {
     flexDirection: "row",
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 2,
-    backgroundColor: "#c2ecfc", // Light gray color for the separator
+    // backgroundColor: "#c2ecfc", // Light gray color for the separator
     marginVertical: 20,
   },
   profilePicture: {
@@ -376,21 +376,26 @@ const styles = StyleSheet.create({
   button: {
     paddingHorizontal: 20,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
   },
   followButton: {
     marginRight: 0,
-    backgroundColor: "#1E88E5", // Follow button with blue background
+    backgroundColor: "#fff", // Unfollow button with darker red background
+
   },
   unfollowButton: {
-    backgroundColor: "#E53935", // Unfollow button with darker red background
+    backgroundColor: "#d1d1d1",
+
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   buttonText: {
-    color: "white",
+    color: "grey",
     fontSize: 14,
-    fontWeight: "bold",
   },
   essenceImage: {
     width: 100,

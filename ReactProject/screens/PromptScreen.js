@@ -247,7 +247,8 @@ const PromptScreen = ({ navigation }) => {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.countdown}>{countdown} Until next Prompt</Text>
+      <Text style={styles.countdownText}> Time until next prompt:</Text>
+      <Text style={styles.countdown}> {countdown}</Text>
      {!isPromptAnswered ? (
   <View style={styles.addSubmissionContainer}>
     <Text style={styles.addSubmissionText}>
@@ -363,14 +364,20 @@ const PromptScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#c0e0ed",
+    backgroundColor: "#e6e6e6",
     padding: 25,
   },
   promptContainer: {
-    backgroundColor: "#FFF",
-    borderRadius: 10,
-    padding: 15,
+    backgroundColor: "white",
+    borderRadius: 8,
+    padding: 16,
     marginVertical: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+
   },
   promptText: {
     fontSize: 16,
@@ -399,13 +406,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   addButton: {
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#d1d1d1",
     borderRadius: 5,
     padding: 10,
     alignItems: "center",
   },
   addButtonLabel: {
-    color: "#FFF",
+    color: "grey",
     fontWeight: "bold",
   },
   sortButtonsContainer: {
@@ -425,7 +432,7 @@ const styles = StyleSheet.create({
   },
   sortButtonText: {
     fontWeight: "bold",
-    color: "#3B82F6",
+    color: "grey",
     textAlign: "center", // Center text horizontally
   },
   addSubmissionContainer: {
@@ -548,6 +555,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 20,
     color: '#3B82F6', // Adjust the color to your preference
+  },
+  countdownText: {
+    fontSize: 18,
+    textAlign: 'center',
+    marginBottom: 5,
   },
   
   
